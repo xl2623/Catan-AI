@@ -22,7 +22,8 @@ class heuristicAIPlayer(player):
         self.setupResources = [] #List to keep track of setup resources
         #Initialize resources with just correct number needed for set up
         self.resources = {'ORE':0, 'BRICK':4, 'WHEAT':2, 'WOOD':4, 'SHEEP':2} #Dictionary that keeps track of resource amounts
-        print("Added new AI Player:", self.name)
+        if self.ifprint:
+            print("Added new AI Player:", self.name)
 
     '''
     Set of initial placement functions
@@ -86,7 +87,6 @@ class heuristicAIPlayer(player):
             for r in resourcesAtVertex:
                 if(r != 'DESERT' and r not in self.setupResources):
                     vertexNumValue += 2.5 #Every new resource gets a bonus
-            
             vertexValues.append(vertexNumValue)
         
         # Choose best vertex based on heuristics
@@ -101,7 +101,8 @@ class heuristicAIPlayer(player):
     '''
     
     def move(self, board):
-        print("AI Player {} playing...".format(self.name))
+        if self.ifprint:
+            print("AI Player {} playing...".format(self.name))
         #Trade resources if there are excessive amounts of a particular resource
         self.trade()
         #Build a settlements, city and few roads

@@ -10,6 +10,7 @@ class player():
 
     #Initialize a game player, we use A, B and C to identify
     def __init__(self, playerName, playerColor, init_placement_type="heuristic"):
+        self.ifprint = False
         self.name = playerName
         self.color = playerColor
         self.victoryPoints = 0
@@ -62,14 +63,17 @@ class player():
                 #Calculate current max road length and update
                 maxRoads = self.get_road_length(board)
                 self.maxRoadLength = maxRoads
-
-                print('{} Built a Road. MaxRoadLength: {}'.format(self.name, self.maxRoadLength))
+                
+                if self.ifprint:
+                    print('{} Built a Road. MaxRoadLength: {}'.format(self.name, self.maxRoadLength))
 
             else:
-                print("No roads available to build")
+                if self.ifprint:
+                    print("No roads available to build")
 
         else:
-            print("Insufficient Resources to Build Road - Need 1 BRICK, 1 WOOD")
+            if self.ifprint:
+                print("Insufficient Resources to Build Road - Need 1 BRICK, 1 WOOD")
 
 
     #function to build a settlement on vertex with coordinates vCoord
@@ -92,19 +96,22 @@ class player():
                 
                 self.victoryPoints += 1
                 board.updateBoardGraph_settlement(vCoord, self) #update the overall boardGraph
-
-                print('{} Built a Settlement'.format(self.name))
+                if self.ifprint:
+                    print('{} Built a Settlement'.format(self.name))
                 
                  #Add port to players port list if it is a new port
                 if((board.boardGraph[vCoord].port != False) and (board.boardGraph[vCoord].port not in self.portList)):
                     self.portList.append(board.boardGraph[vCoord].port)
-                    print("{} now has {} Port access".format(self.name, board.boardGraph[vCoord].port))
+                    if self.ifprint:
+                        print("{} now has {} Port access".format(self.name, board.boardGraph[vCoord].port))
 
             else:
-                print("No settlements available to build")
+                if self.ifprint:
+                    print("No settlements available to build")
   
         else:
-            print("Insufficient Resources to Build Settlement. Build Cost: 1 BRICK, 1 WOOD, 1 WHEAT, 1 SHEEP")
+            if self.ifprint:
+                print("Insufficient Resources to Build Settlement. Build Cost: 1 BRICK, 1 WOOD, 1 WHEAT, 1 SHEEP")
 
     #function to build a city on vertex v
     def build_city(self, vCoord, board):
@@ -121,13 +128,16 @@ class player():
                 self.victoryPoints += 1
 
                 board.updateBoardGraph_city(vCoord, self) #update the overall boardGraph
-                print('{} Built a City'.format(self.name))
+                if self.ifprint:
+                    print('{} Built a City'.format(self.name))
 
             else:
-                print("No cities available to build")
+                if self.ifprint:
+                    print("No cities available to build")
 
         else:
-            print("Insufficient Resources to Build City. Build Cost: 3 ORE, 2 WHEAT")
+            if self.ifprint:
+                print("Insufficient Resources to Build City. Build Cost: 3 ORE, 2 WHEAT")
     
     #function to move robber to a specific hex and steal from a player
     def move_robber(self, hexIndex, board, player_robbed):
@@ -143,7 +153,8 @@ class player():
     #Function to steal a random resource from player_2
     def steal_resource(self, player_2):
         if(player_2 == None):
-            print("No Player on this hex to Rob")
+            if self.ifprint:
+                print("No Player on this hex to Rob")
             return
         
         #Get all resources player 2 has in a list and use random list index to steal
@@ -160,7 +171,8 @@ class player():
         #Update resources of both players
         player_2.resources[resourceStolen] -= 1
         self.resources[resourceStolen] += 1
-        print("Stole 1 {} from Player {}".format(resourceStolen, player_2.name))
+        if self.ifprint:
+            print("Stole 1 {} from Player {}".format(resourceStolen, player_2.name))
 
         return
 
@@ -259,7 +271,8 @@ class player():
 
             #IF there are no devCards left
             if(devCardsToDraw == []):
-                print("No Dev Cards Left!")
+                if self.ifprint:
+                    print("No Dev Cards Left!")
                 return
 
             devCardIndex = np.random.randint(0, len(devCardsToDraw))
@@ -284,10 +297,12 @@ class player():
                 self.newDevCards.append(cardDrawn)
                 board.devCardStack[cardDrawn] -= 1
             
-            print("{} drew a {} from Development Card Stack".format(self.name, cardDrawn))
+            if self.ifprint:
+                print("{} drew a {} from Development Card Stack".format(self.name, cardDrawn))
 
         else:
-            print("Insufficient Resources for Dev Card. Cost: 1 ORE, 1 WHEAT, 1 SHEEP")
+            if self.ifprint:
+                print("Insufficient Resources for Dev Card. Cost: 1 ORE, 1 WHEAT, 1 SHEEP")
 
     #Function to update dev card stack with dev cards drawn from prior turn
     def updateDevCards(self):
@@ -302,7 +317,8 @@ class player():
         'Update game state'
         #Check if player can play a devCard this turn
         if(self.devCardPlayedThisTurn):
-            print('Already played 1 Dev Card this turn!')
+            if self.ifprint:
+                print('Already played 1 Dev Card this turn!')
             return
 
         #Get a list of all the unique dev cards this player can play
@@ -312,7 +328,8 @@ class player():
                 devCardsAvailable.append((cardName, cardAmount))
 
         if(devCardsAvailable == []):
-            print("No Development Cards available to play")
+            if self.ifprint:
+                print("No Development Cards available to play")
             return
         
         #Use Keyboard control to play the Dev Card
@@ -320,7 +337,8 @@ class player():
         for indx, card in enumerate(devCardsAvailable):
             devCard_dict[indx] = card[0]
 
-        print("Development Cards Available to Play", devCard_dict)
+        if self.ifprint:
+            print("Development Cards Available to Play", devCard_dict)
 
         devCardNumber = -1
         while (devCardNumber not in devCard_dict.keys()):
@@ -330,7 +348,8 @@ class player():
         devCardPlayed = devCard_dict[devCardNumber]
         self.devCardPlayedThisTurn = True
 
-        print("Playing Dev Card:", devCardPlayed)
+        if self.ifprint:
+            print("Playing Dev Card:", devCardPlayed)
         self.devCards[devCardPlayed] -= 1
 
         #Logic for each Dev Card
@@ -348,7 +367,8 @@ class player():
         resource_list = ['BRICK', 'WOOD', 'WHEAT', 'SHEEP', 'ORE']
 
         if(devCardPlayed == 'YEAROFPLENTY'):
-            print("Resources available:", resource_list)
+            if self.ifprint:
+                print("Resources available:", resource_list)
 
             r1, r2 = "", ""
             while ((r1 not in self.resources.keys()) or (r2 not in self.resources.keys())):
@@ -359,7 +379,8 @@ class player():
             self.resources[r2] += 1
 
         if(devCardPlayed == 'MONOPOLY'):
-            print("Resources to Monopolize:", resource_list)
+            if self.ifprint:
+                print("Resources to Monopolize:", resource_list)
 
             resourceToMonopolize = ""
             while (resourceToMonopolize not in self.resources.keys()):
@@ -387,25 +408,29 @@ class player():
         if(r1_port in self.portList and self.resources[r1] >= 2): #Can use 2:1 port with r1
             self.resources[r1] -= 2
             self.resources[r2] += 1
-            print("Traded 2 {} for 1 {} using {} Port".format(r1, r2, r1))
+            if self.ifprint:
+                print("Traded 2 {} for 1 {} using {} Port".format(r1, r2, r1))
             return
 
         #Check for 3:1 Port
         elif('3:1 PORT' in self.portList and self.resources[r1] >= 3):
             self.resources[r1] -= 3
             self.resources[r2] += 1
-            print("Traded 3 {} for 1 {} using 3:1 Port".format(r1, r2))
+            if self.ifprint:
+                print("Traded 3 {} for 1 {} using 3:1 Port".format(r1, r2))
             return
 
         #Check 4:1 port
         elif(self.resources[r1] >= 4):
             self.resources[r1] -= 4
             self.resources[r2] += 1
-            print("Traded 4 {} for 1 {}".format(r1, r2))
+            if self.ifprint:
+                print("Traded 4 {} for 1 {}".format(r1, r2))
             return
         
         else:
-            print("Insufficient resource {} to trade with Bank".format(r1))
+            if self.ifprint:
+                print("Insufficient resource {} to trade with Bank".format(r1))
             return
 
 
@@ -418,7 +443,8 @@ class player():
         resource_list = ['BRICK', 'WOOD', 'WHEAT', 'SHEEP', 'ORE']
 
         if trade_type == 'BANK':
-            print("\nBank Trading Menu - Resource Names:", resource_list) #display resource names
+            if self.ifprint:
+                print("\nBank Trading Menu - Resource Names:", resource_list) #display resource names
 
             #Player to select resource to trade
             resourceToTrade = ""
@@ -441,8 +467,9 @@ class player():
             #Select player to trade with - generate list of other players
             playerNames = [p.name for p in list(game.playerQueue.queue)]
 
-            print("\nInter-Player Trading Menu - Player Names:", playerNames)
-            print("Resource List:", resource_list)
+            if self.ifprint:
+                print("\nInter-Player Trading Menu - Player Names:", playerNames)
+                print("Resource List:", resource_list)
 
             #Disallow trading with self
             playerToTrade_name = ''
@@ -462,7 +489,8 @@ class player():
                 #Reset if invalid resource is chosen
                 if resourceToTrade in self.resources.keys() and self.resources[resourceToTrade] == 0:
                     resourceToTrade = ""
-                    print("Players can only trade resources they already have")
+                    if self.ifprint:
+                        print("Players can only trade resources they already have")
 
             #Specify quantity to trade
             resource_traded_amount = 0
@@ -476,7 +504,8 @@ class player():
                 #Reset if invalid resource is chosen
                 if resourceToReceive in self.resources.keys() and playerToTrade.resources[resourceToReceive] == 0:
                     resourceToReceive = -""
-                    print("Player {} doesn't have any {} to trade".format(playerToTrade_name, resourceToReceive))
+                    if self.ifprint:
+                        print("Player {} doesn't have any {} to trade".format(playerToTrade_name, resourceToReceive))
 
             #Specify quantity to receive
             resource_received_amount = 0
@@ -492,13 +521,15 @@ class player():
             playerToTrade.resources[resourceToReceive] -= resource_received_amount
             playerToTrade.resources[resourceToTrade] += resource_traded_amount
 
-            print("Player {} successfully traded {} {} for {} {} with player {}".format(self.name, resource_traded_amount, resourceToTrade,
+            if self.ifprint:
+                print("Player {} successfully traded {} {} for {} {} with player {}".format(self.name, resource_traded_amount, resourceToTrade,
                                                                                         resource_received_amount, resourceToReceive, playerToTrade_name))
 
             return 
 
         else:
-            print("Illegal trade_type flag")
+            if self.ifprint:
+                print("Illegal trade_type flag")
             return
 
 
@@ -516,11 +547,13 @@ class player():
         #Logic to calculate number of cards to discard and allow player to select
         if totalResourceCount > maxCards:
             numCardsToDiscard = int(totalResourceCount/2)
-            print("\nPlayer {} has {} cards and MUST choose {} cards to discard...".format(self.name, totalResourceCount, numCardsToDiscard))
+            if self.ifprint:
+                print("\nPlayer {} has {} cards and MUST choose {} cards to discard...".format(self.name, totalResourceCount, numCardsToDiscard))
             
             #Loop to allow player to discard cards
             for i in range(numCardsToDiscard):
-                print("Player {} current resources to choose from:", self.resources)
+                if self.ifprint:
+                    print("Player {} current resources to choose from:", self.resources)
                 
                 resourceToDiscard = ''
                 while (resourceToDiscard not in self.resources.keys()) or (self.resources[resourceToDiscard] == 0):
@@ -528,10 +561,12 @@ class player():
 
                 #Discard that resource
                 self.resources[resourceToDiscard] -= 1
-                print("Player {} discarded a {}, and needs to discard {} more cards".format(self.name, resourceToDiscard, (numCardsToDiscard-1-i)))
+                if self.ifprint:
+                    print("Player {} discarded a {}, and needs to discard {} more cards".format(self.name, resourceToDiscard, (numCardsToDiscard-1-i)))
 
 
         else:
-            print("\nPlayer {} has {} cards and does not need to discard any cards!".format(self.name, totalResourceCount))
+            if self.ifprint:
+                print("\nPlayer {} has {} cards and does not need to discard any cards!".format(self.name, totalResourceCount))
             return
 

@@ -13,10 +13,11 @@ import matplotlib.pyplot as plt
 #Class to implement an only AI
 class catanAIGame():
     #Create new gameboard
-    def __init__(self, ifprint = False, ifGUI = False):
+    def __init__(self, ifprint = False, ifGUI = False, specialPlayerName=0):
         # Display options
         self.ifprint = ifprint
         self.ifGUI = ifGUI
+        self.specialPlayerName = specialPlayerName
         
         if self.ifprint:
             print("Initializing Settlers of Catan with only AI Players...")
@@ -75,7 +76,11 @@ class catanAIGame():
                 self.playerQueue.put(newPlayer)
             else:
                 playerNameInput = ["1", "2", "3", "4"]
-                newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i])
+                if playerNameInput[i] == self.specialPlayerName:
+                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i], init_placement_type="random")
+                else:
+                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i])
+                    
                 newPlayer.updateAI()
                 self.playerQueue.put(newPlayer)
 
@@ -282,6 +287,6 @@ class catanAIGame():
 
                     break
                                    
-
-#Initialize new game and run
-newGame_AI = catanAIGame()
+if __name__=="__main__":
+    #Initialize new game and run
+    newGame_AI = catanAIGame()

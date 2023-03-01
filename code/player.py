@@ -359,9 +359,13 @@ class player():
 
         if(devCardPlayed == 'ROADBUILDER'):
             game.build(self, 'ROAD')
-            game.boardView.displayGameScreen()
+            
+            if game.ifGUI:
+                game.boardView.displayGameScreen()
             game.build(self, 'ROAD')
-            game.boardView.displayGameScreen()
+            
+            if game.ifGUI:
+                game.boardView.displayGameScreen()
 
         #Resource List for Year of Plenty and Monopoly
         resource_list = ['BRICK', 'WOOD', 'WHEAT', 'SHEEP', 'ORE']

@@ -13,8 +13,11 @@ import matplotlib.pyplot as plt
 #Class to implement an only AI
 class catanAIGame():
     #Create new gameboard
-    def __init__(self):
-        self.ifprint = False
+    def __init__(self, ifprint = False, ifGUI = False):
+        # Display options
+        self.ifprint = ifprint
+        self.ifGUI = ifGUI
+        
         if self.ifprint:
             print("Initializing Settlers of Catan with only AI Players...")
         self.board = catanBoard()
@@ -45,15 +48,17 @@ class catanAIGame():
         self.gameSetup = True #Boolean to take care of setup phase
 
         #Initialize boardview object
-        self.boardView = catanGameView(self.board, self)
+        if self.ifGUI:
+            self.boardView = catanGameView(self.board, self)
 
         #Functiont to go through initial set up
         self.build_initial_settlements() 
         self.playCatan()
 
         #Plot diceStats histogram
-        plt.hist(self.diceStats_list, bins = 11)
-        plt.show()
+        if self.ifGUI:
+            plt.hist(self.diceStats_list, bins = 11)
+            plt.show()
 
         return None
     
@@ -80,7 +85,8 @@ class catanAIGame():
         for player_i in playerList: 
             player_i.initial_setup(self.board)
             pygame.event.pump()
-            self.boardView.displayGameScreen()
+            if self.ifGUI:
+                self.boardView.displayGameScreen()
             if self.ifprint:
                 pygame.time.delay(1000)
 
@@ -90,7 +96,8 @@ class catanAIGame():
         for player_i in playerList: 
             player_i.initial_setup(self.board)
             pygame.event.pump()
-            self.boardView.displayGameScreen()
+            if self.ifGUI:
+                self.boardView.displayGameScreen()
             if self.ifprint:
                 pygame.time.delay(1000)
             
@@ -246,7 +253,8 @@ class catanAIGame():
                     if self.ifprint:
                         print("Player:{}, Resources:{}, Points: {}".format(currPlayer.name, currPlayer.resources, currPlayer.victoryPoints))
 
-                    self.boardView.displayGameScreen()#Update back to original gamescreen
+                    if self.ifGUI:
+                        self.boardView.displayGameScreen()#Update back to original gamescreen
                     if self.ifprint:
                         pygame.time.delay(300)
                     turnOver = True

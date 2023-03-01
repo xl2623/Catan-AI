@@ -14,7 +14,9 @@ import matplotlib.pyplot as plt
 class catanAIGame():
     #Create new gameboard
     def __init__(self):
-        print("Initializing Settlers of Catan with only AI Players...")
+        self.ifprint = False
+        if self.ifprint:
+            print("Initializing Settlers of Catan with only AI Players...")
         self.board = catanBoard()
 
         #Game State variables
@@ -28,12 +30,15 @@ class catanAIGame():
 
         while(self.numPlayers not in [3,4]): #Only accept 3 and 4 player games
             try:
-                self.numPlayers = int(input("Enter Number of Players (3 or 4):"))
+                if self.ifprint:
+                    self.numPlayers = int(input("Enter Number of Players (3 or 4):"))
+                else:
+                    self.numPlayers = 4
             except:
                 print("Please input a valid number")
-
-        print("Initializing game with {} players...".format(self.numPlayers))
-        print("Note that Player 1 goes first, Player 2 second and so forth.")
+        if self.ifprint:
+            print("Initializing game with {} players...".format(self.numPlayers))
+            print("Note that Player 1 goes first, Player 2 second and so forth.")
         
         #Initialize blank player queue and initial set up of roads + settlements
         self.playerQueue = queue.Queue(self.numPlayers)
@@ -43,7 +48,7 @@ class catanAIGame():
         self.boardView = catanGameView(self.board, self)
 
         #Functiont to go through initial set up
-        self.build_initial_settlements()
+        self.build_initial_settlements() 
         self.playCatan()
 
         #Plot diceStats histogram
@@ -58,10 +63,16 @@ class catanAIGame():
         #Initialize new players with names and colors
         playerColors = ['black', 'darkslateblue', 'magenta4', 'orange1']
         for i in range(self.numPlayers):
-            playerNameInput = input("Enter AI Player {} name: ".format(i+1))
-            newPlayer = heuristicAIPlayer(playerNameInput, playerColors[i])
-            newPlayer.updateAI()
-            self.playerQueue.put(newPlayer)
+            if self.ifprint:
+                playerNameInput = input("Enter AI Player {} name: ".format(i+1))
+                newPlayer = heuristicAIPlayer(playerNameInput, playerColors[i])
+                newPlayer.updateAI()
+                self.playerQueue.put(newPlayer)
+            else:
+                playerNameInput = ["1", "2", "3", "4"]
+                newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i])
+                newPlayer.updateAI()
+                self.playerQueue.put(newPlayer)
 
         playerList = list(self.playerQueue.queue)
 
@@ -70,7 +81,8 @@ class catanAIGame():
             player_i.initial_setup(self.board)
             pygame.event.pump()
             self.boardView.displayGameScreen()
-            pygame.time.delay(1000)
+            if self.ifprint:
+                pygame.time.delay(1000)
 
 
         #Build Settlements and roads of each player reverse
@@ -79,9 +91,11 @@ class catanAIGame():
             player_i.initial_setup(self.board)
             pygame.event.pump()
             self.boardView.displayGameScreen()
-            pygame.time.delay(1000)
+            if self.ifprint:
+                pygame.time.delay(1000)
             
-            print("Player {} starts with {} resources".format(player_i.name, len(player_i.setupResources)))
+            if self.ifprint:
+                print("Player {} starts with {} resources".format(player_i.name, len(player_i.setupResources)))
 
             #Initial resource generation
             #check each adjacent hex to latest settlement
@@ -89,9 +103,10 @@ class catanAIGame():
                 resourceGenerated = self.board.hexTileDict[adjacentHex].resource.type
                 if(resourceGenerated != 'DESERT'):
                     player_i.resources[resourceGenerated] += 1
-                    print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
-        
-        pygame.time.delay(5000)
+                    if self.ifprint:
+                        print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
+        if self.ifprint:
+            pygame.time.delay(10000)
         self.gameSetup = False
 
 
@@ -100,7 +115,8 @@ class catanAIGame():
         dice_1 = np.random.randint(1,7)
         dice_2 = np.random.randint(1,7)
         diceRoll = dice_1 + dice_2
-        print("Dice Roll = ", diceRoll, "{", dice_1, dice_2, "}")
+        if self.ifprint:
+            print("Dice Roll = ", diceRoll, "{", dice_1, dice_2, "}")
 
         return diceRoll
 
@@ -119,7 +135,8 @@ class catanAIGame():
                         if(adjacentHex in hexResourcesRolled and self.board.hexTileDict[adjacentHex].robber == False): #This player gets a resource if hex is adjacent and no robber
                             resourceGenerated = self.board.hexTileDict[adjacentHex].resource.type
                             player_i.resources[resourceGenerated] += 1
-                            print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
+                            if self.ifprint:
+                                print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
                 
                 #Check each City the player has
                 for cityCoord in player_i.buildGraph['CITIES']:
@@ -127,15 +144,18 @@ class catanAIGame():
                         if(adjacentHex in hexResourcesRolled and self.board.hexTileDict[adjacentHex].robber == False): #This player gets a resource if hex is adjacent and no robber
                             resourceGenerated = self.board.hexTileDict[adjacentHex].resource.type
                             player_i.resources[resourceGenerated] += 2
-                            print("{} collects 2 {} from City".format(player_i.name, resourceGenerated))
+                            if self.ifprint:
+                                print("{} collects 2 {} from City".format(player_i.name, resourceGenerated))
 
-                print("Player:{}, Resources:{}, Points: {}".format(player_i.name, player_i.resources, player_i.victoryPoints))
-                #print('Dev Cards:{}'.format(player_i.devCards))
-                #print("RoadsLeft:{}, SettlementsLeft:{}, CitiesLeft:{}".format(player_i.roadsLeft, player_i.settlementsLeft, player_i.citiesLeft))
-                print('MaxRoadLength:{}, Longest Road:{}\n'.format(player_i.maxRoadLength, player_i.longestRoadFlag))
+                if self.ifprint:
+                    print("Player:{}, Resources:{}, Points: {}".format(player_i.name, player_i.resources, player_i.victoryPoints))
+                    #print('Dev Cards:{}'.format(player_i.devCards))
+                    #print("RoadsLeft:{}, SettlementsLeft:{}, CitiesLeft:{}".format(player_i.roadsLeft, player_i.settlementsLeft, player_i.citiesLeft))
+                    print('MaxRoadLength:{}, Longest Road:{}\n'.format(player_i.maxRoadLength, player_i.longestRoadFlag))
         
         else:
-            print("AI using heuristic robber...")
+            if self.ifprint:
+                print("AI using heuristic robber...")
             currentPlayer.heuristic_move_robber(self.board)
 
 
@@ -159,7 +179,8 @@ class catanAIGame():
                 player_i.longestRoadFlag = True
                 player_i.victoryPoints += 2
 
-                print("Player {} takes Longest Road {}".format(player_i.name, prevPlayer))
+                if self.ifprint:
+                    print("Player {} takes Longest Road {}".format(player_i.name, prevPlayer))
 
     #function to check if a player has the largest army - after playing latest knight
     def check_largest_army(self, player_i):
@@ -181,7 +202,8 @@ class catanAIGame():
                 player_i.largestArmyFlag = True
                 player_i.victoryPoints += 2
 
-                print("Player {} takes Largest Army {}".format(player_i.name, prevPlayer))
+                if self.ifprint:
+                    print("Player {} takes Largest Army {}".format(player_i.name, prevPlayer))
 
 
 
@@ -193,8 +215,10 @@ class catanAIGame():
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
                 numTurns += 1
-                print("---------------------------------------------------------------------------")
-                print("Current Player:", currPlayer.name)
+                
+                if self.ifprint:
+                    print("---------------------------------------------------------------------------")
+                    print("Current Player:", currPlayer.name)
 
                 turnOver = False #boolean to keep track of turn
                 diceRolled = False  #Boolean for dice roll status
@@ -219,28 +243,34 @@ class catanAIGame():
                     currPlayer.move(self.board) #AI Player makes all its moves
                     #Check if AI player gets longest road and update Victory points
                     self.check_longest_road(currPlayer)
-                    print("Player:{}, Resources:{}, Points: {}".format(currPlayer.name, currPlayer.resources, currPlayer.victoryPoints))
-                    
+                    if self.ifprint:
+                        print("Player:{}, Resources:{}, Points: {}".format(currPlayer.name, currPlayer.resources, currPlayer.victoryPoints))
+
                     self.boardView.displayGameScreen()#Update back to original gamescreen
-                    pygame.time.delay(300)
+                    if self.ifprint:
+                        pygame.time.delay(300)
                     turnOver = True
                     
                     #Check if game is over
                     if currPlayer.victoryPoints >= self.maxPoints:
                         self.gameOver = True
                         self.turnOver = True
-                        print("====================================================")
-                        print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
-                        print(self.diceStats)
-                        print("Exiting game in 10 seconds...")
-                        pygame.time.delay(10000)
+                        if self.ifprint:
+                            print("====================================================")
+                            print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
+                            print(self.diceStats)
+                            print("Exiting game in 5 seconds...")
+                            pygame.time.delay(5000)
+                        else:
+                            print("====================================================")
+                            print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
                         break
 
                 if(self.gameOver):
-                    startTime = pygame.time.get_ticks()
-                    runTime = 0
-                    while(runTime < 5000): #5 second delay prior to quitting
-                        runTime = pygame.time.get_ticks() - startTime
+                    # startTime = pygame.time.get_ticks()
+                    # runTime = 0
+                    # while(runTime < 5000): #5 second delay prior to quitting
+                    #     runTime = pygame.time.get_ticks() - startTime
 
                     break
                                    

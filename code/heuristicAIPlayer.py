@@ -14,14 +14,14 @@ class heuristicAIPlayer(player):
         self.setupResources = [] #List to keep track of setup resources
         #Initialize resources with just correct number needed for set up
         self.resources = {'ORE':0, 'BRICK':4, 'WHEAT':2, 'WOOD':4, 'SHEEP':2} #Dictionary that keeps track of resource amounts
-        print("Added new AI Player:", self.name)
+        if self.ifprint:
+            print("Added new AI Player:", self.name)
 
 
     #Function to build an initial settlement - just choose random spot for now
     def initial_setup(self, board):
         #Build random settlement
         possibleVertices = board.get_setup_settlements(self)
-
         #Simple heuristic for choosing initial spot
         diceRoll_expectation = {2:1, 3:2, 4:3, 5:4, 6:5, 8:5, 9:4, 10:3, 11:2, 12:1, None:0}
         vertexValues = []
@@ -43,9 +43,7 @@ class heuristicAIPlayer(player):
             for r in resourcesAtVertex:
                 if(r != 'DESERT' and r not in self.setupResources):
                     vertexNumValue += 2.5 #Every new resource gets a bonus
-            
             vertexValues.append(vertexNumValue)
-
 
         vertexToBuild_index = vertexValues.index(max(vertexValues))
         vertexToBuild = list(possibleVertices.keys())[vertexToBuild_index]
@@ -66,7 +64,8 @@ class heuristicAIPlayer(player):
 
     
     def move(self, board):
-        print("AI Player {} playing...".format(self.name))
+        if self.ifprint:
+            print("AI Player {} playing...".format(self.name))
         #Trade resources if there are excessive amounts of a particular resource
         self.trade()
         #Build a settlements, city and few roads

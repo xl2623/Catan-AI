@@ -27,7 +27,7 @@ class catanBoard(hexTile, Vertex):
         self.flat = Layout(layout_flat, Point(self.edgeLength, self.edgeLength), Point(self.width/2, self.height/2)) #specify Layout
 
         ##INITIALIZE BOARD##
-        print("Initializing Catan Game Board...")
+        # print("Initializing Catan Game Board...")
         self.resourcesList = self.getRandomResourceList() #Assign resources numbers randomly
 
         #Get a random permutation of indices 0-18 to use with the resource list
@@ -39,7 +39,7 @@ class catanBoard(hexTile, Vertex):
             reinitializeCount += 1
             randomIndices = np.random.permutation([i for i in range(len(self.resourcesList))])
 
-        print("Re-initialized random board {} times".format(reinitializeCount))
+        # print("Re-initialized random board {} times".format(reinitializeCount))
         
         hexIndex_i = 0 #initialize hexIndex at 0
         #Neighbors are specified in adjacency matrix - hard coded

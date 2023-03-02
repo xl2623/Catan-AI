@@ -15,7 +15,8 @@ class player():
         self.color = playerColor
         self.victoryPoints = 0
         self.isAI = False
-
+        self.placementOrder = None
+        
         self.settlementsLeft = 5
         self.roadsLeft = 15
         self.citiesLeft = 4

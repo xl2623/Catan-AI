@@ -87,7 +87,11 @@ class catanAIGame():
         playerList = list(self.playerQueue.queue)
 
         #Build Settlements and roads of each player forwards
-        for player_i in playerList: 
+        random.shuffle(playerList)
+        order = 1
+        for player_i in playerList:
+            player_i.placementOrder = order
+            order += 1
             player_i.initial_setup(self.board)
             pygame.event.pump()
             if self.ifGUI:
@@ -275,8 +279,9 @@ class catanAIGame():
                             print("Exiting game in 5 seconds...")
                             pygame.time.delay(5000)
                         else:
-                            print("====================================================")
-                            print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
+                            #print("====================================================")
+                            #print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
+                            break
                         break
 
                 if(self.gameOver):

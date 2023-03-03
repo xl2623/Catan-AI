@@ -10,6 +10,7 @@ class player():
 
     #Initialize a game player, we use A, B and C to identify
     def __init__(self, playerName, playerColor, init_placement_type="heuristic"):
+        self.sarn = []
         self.ifprint = False
         self.name = playerName
         self.color = playerColor

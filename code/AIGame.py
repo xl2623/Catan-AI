@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 #Class to implement an only AI
 class catanAIGame():
     #Create new gameboard
-    def __init__(self, ifprint = False, ifGUI = False, specialPlayerName=0):
+    def __init__(self, ifprint = False, ifGUI = False, specialPlayerName=0, selfstart=True):
         # Display options
         self.ifprint = ifprint
         self.ifGUI = ifGUI
@@ -52,10 +52,12 @@ class catanAIGame():
         if self.ifGUI:
             self.boardView = catanGameView(self.board, self)
         self.currdiceNum = 0
-        #Functiont to go through initial set up
-        self.build_initial_settlements() 
 
-        self.playCatan()
+        if selfstart:
+            #Functiont to go through initial set up
+            self.build_initial_settlements() 
+
+            self.playCatan()
 
         #Plot diceStats histogram
         if self.ifGUI:
@@ -250,9 +252,7 @@ class catanAIGame():
             self.state.append(player.resources['WOOD'])
             self.state.append(player.resources['SHEEP'])
 
-
-    #Function to initialize players + build initial settlements for players
-    def build_initial_settlements(self):
+    def create_player_list(self, special_placement_type="random"):
         #Initialize new players with names and colors
         playerColors = ['black', 'darkslateblue', 'magenta4', 'orange1']
         for i in range(self.numPlayers):
@@ -264,7 +264,7 @@ class catanAIGame():
             else:
                 playerNameInput = ["1", "2", "3", "4"]
                 if playerNameInput[i] == self.specialPlayerName:
-                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i], init_placement_type="random")
+                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i], init_placement_type=special_placement_type)
                 else:
                     newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i])
                     
@@ -272,6 +272,21 @@ class catanAIGame():
                 self.playerQueue.put(newPlayer)
 
         playerList = list(self.playerQueue.queue)
+
+        return playerList
+
+    def allocate_initial_resources(self, playerList):
+        for player_i in playerList:
+            #Initial resource generation
+            #check each adjacent hex to latest settlement
+            for adjacentHex in self.board.boardGraph[player_i.buildGraph['SETTLEMENTS'][-1]].adjacentHexList:
+                resourceGenerated = self.board.hexTileDict[adjacentHex].resource.type
+                if(resourceGenerated != 'DESERT'):
+                    player_i.resources[resourceGenerated] += 1
+
+    #Function to initialize players + build initial settlements for players
+    def build_initial_settlements(self):
+        playerList = self.create_player_list()
 
         #Build Settlements and roads of each player forwards
         random.shuffle(playerList)
@@ -473,7 +488,7 @@ class catanAIGame():
                         else:
                             print("====================================================")
                             print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
-                            break
+                            return currPlayer.name, int(numTurns/4)
                         break
 
                 if(self.gameOver):

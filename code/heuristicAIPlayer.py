@@ -28,11 +28,13 @@ class heuristicAIPlayer(player):
     '''
     Set of initial placement functions
     '''
-    def initial_setup(self, board):
+    def initial_setup(self, board, placement_policy=None):
         if self.init_placement_type == 'heuristic':
             self.initial_heuristic_setup(board)
         elif self.init_placement_type == 'random':
             self.initial_random_setup(board)
+        elif self.init_placement_type == 'learning':
+            self.initial_learning_setup(board, placement_policy)
         else:
             raise NameError("HeuristicPlayer: initial setup type is not recognized")
 
@@ -96,7 +98,17 @@ class heuristicAIPlayer(player):
 
         # Build random road
         self.build_rand_road(board)
-        
+    
+    def initial_learning_setup(self, board, placement_policy):
+        possibleVertices = board.get_setup_settlements(self)
+
+        # Build settlement
+        vertexToBuild = placement_policy.best_placement(board, possibleVertices)
+        self.build_settlement_at_vertex(vertexToBuild, board)
+
+        # Build random road
+        self.build_rand_road(board)
+
     '''
     '''
     

@@ -6,7 +6,7 @@ import pygame
 def play_game(placement_policy):
     # Create game object
     special_player_name = 0
-    catan_game = catanAIGame(ifprint=False, ifGUI=False, special_player_name=special_player_name, selfstart=False)
+    catan_game = catanAIGame(ifprint=False, ifGUI=False, specialPlayerName=special_player_name, selfstart=False)
 
     # 1st placement
     player_list = catan_game.create_player_list(special_placement_type="learning")
@@ -22,7 +22,7 @@ def play_game(placement_policy):
         if player_i.name == special_player_name:
             player_i.initial_setup(catan_game.board, placement_policy)
         else:
-            player_i.inital_setup(catan_game.board)
+            player_i.initial_setup(catan_game.board)
         pygame.event.pump()
     
     # 2nd placement
@@ -33,7 +33,7 @@ def play_game(placement_policy):
         if player_i.name == special_player_name:
             player_i.initial_setup(catan_game.board, placement_policy)
         else:
-            player_i.inital_setup(catan_game.board)
+            player_i.initial_setup(catan_game.board)
         pygame.event.pump()
         
     # Resource allocation for players
@@ -43,3 +43,15 @@ def play_game(placement_policy):
     winner, turns = catan_game.playCatan()
 
     return winner, turns
+
+def random_placement_policy(board, possibleVertices):
+    vertexToBuild = random.choice(list(possibleVertices.keys()))
+
+    return vertexToBuild
+
+if __name__ == "__main__":
+    placement_policy = random_placement_policy
+
+    winner, turns = play_game(placement_policy)
+
+    print(winner)

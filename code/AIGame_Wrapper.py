@@ -2,6 +2,7 @@ from AIGame import catanAIGame
 import numpy as np
 from heuristicAIPlayer import *
 import pygame
+from QLearning import GradientQLearning
 
 def play_game(placement_policy):
     # Create game object

@@ -270,27 +270,27 @@ class catanAIGame():
         # 60-68: settlement placement
         # 60, 61 (my settlement placement)
         #        if placed, (vertexindex)
-        #        if not placement, (0)
+        #        if not placement, (-1)
         # 62, 63 (oppoent #1's settlement placement)
         #        if placed, (vertexindex)
-        #        if not placement, 0
+        #        if not placement, -1
         # 64, 65 (oppoent #2's settlement placement)
         #        if placed, (vertexindex)
-        #        if not placement, 0
+        #        if not placement, -1
         # 66, 67 (oppoent #3's settlement placement)
         #        if placed, (vertexindex)
-        #        if not placement, 0
+        #        if not placement, -1
         playerList  = list(self.playerQueue.queue)
         start = int(playerName)-1                  # start from the 0 index of state
         for i in range(start, start+len(playerList)):
             currPlayer = playerList[i%len(playerList)]
             settlements = currPlayer.buildGraph['SETTLEMENTS']
             if len(settlements) == 0:
-                self.state.append(0)
-                self.state.append(0)
+                self.state.append(-1)
+                self.state.append(-1)
             elif len(settlements) == 1:
                 self.state.append(self.pixel_to_vertex_index_dict[settlements[0]])
-                self.state.append(0)
+                self.state.append(-1)
             else:
                 self.state.append(self.pixel_to_vertex_index_dict[settlements[0]])
                 self.state.append(self.pixel_to_vertex_index_dict[settlements[1]])
@@ -298,16 +298,16 @@ class catanAIGame():
         # 68-76: road placement
         # 60, 61 (my road placement)
         #        if placed, (edgeindex)
-        #        if not placement, (0)
+        #        if not placement, (-1)
         # 62, 63 (oppoent #1's road placement)
         #        if placed, (edgeindex)
-        #        if not placement, 0
+        #        if not placement, -1
         # 64, 65 (oppoent #2's raod placement)
         #        if placed, (edgeindex)
-        #        if not placement, 0
+        #        if not placement, -1
         # 66, 67 (oppoent #3's road placement)
         #        if placed, (edgeindex)
-        #        if not placement, 0
+        #        if not placement, -1
         #
         edgeBank = [(Point(x=580.0, y=400.0), Point(x=540.0, y=330.72)), (Point(x=580.0, y=400.0), Point(x=540.0, y=469.28)), 
                     (Point(x=580.0, y=400.0), Point(x=660.0, y=400.0)), (Point(x=540.0, y=330.72), Point(x=460.0, y=330.72)), 
@@ -350,14 +350,14 @@ class catanAIGame():
             currPlayer = playerList[i%len(playerList)]
             roads = currPlayer.buildGraph['ROADS']
             if len(roads) == 0:
-                self.state.append(0)
-                self.state.append(0)
+                self.state.append(-1)
+                self.state.append(-1)
             elif len(roads) == 1:
                 try:
                     self.state.append(edgeBank.index((roads[0][0], roads[0][1])))
                 except:
                     self.state.append(edgeBank.index((roads[0][1], roads[0][0])))
-                self.state.append(0)
+                self.state.append(-1)
             else:
                 try:
                     self.state.append(edgeBank.index((roads[0][0], roads[0][1])))

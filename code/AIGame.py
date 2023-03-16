@@ -22,6 +22,9 @@ class catanAIGame():
         if self.ifprint:
             print("Initializing Settlers of Catan with only AI Players...")
         self.board = catanBoard()
+        
+        #Qlearning stuff
+        self.q = {}
 
         #Game State variables
         self.gameOver = False
@@ -52,7 +55,7 @@ class catanAIGame():
         if self.ifGUI:
             self.boardView = catanGameView(self.board, self)
         self.currdiceNum = 0
-
+        self.pixel_to_vertex_index_dict = {y: x for x, y in self.board.vertex_index_to_pixel_dict.items()}
         if selfstart:
             #Functiont to go through initial set up
             self.build_initial_settlements() 
@@ -71,9 +74,9 @@ class catanAIGame():
         # extract hex state
         # 0: number of the dice
         self.state = []
+        self.state.append(self.currdiceNum)
         ######################### below are static state ###############################
         # 1-19: number on the hex
-        self.state.append(self.currdiceNum)
         for key, value in self.board.hexTileDict.items():
             if value.resource.num == None:
                 self.state.append(0)
@@ -117,27 +120,7 @@ class catanAIGame():
                 elif value.state['City']:
                     self.state.append(-2)
 
-        # 113-167: what's on each edge
-        # for each vertex, if nothing is on it, 0
-        #                  if myself is on it, if city -> 2
-        #                                      if settlement -> 1
-        #                  if opponent is on it, if city -> -2
-        #                                        if settlement -> -1
-        for key, value in self.board.boardGraph.items():
-            if value.state["Player"] == None:
-                self.state.append(0)
-            elif value.state["Player"].name == playerName:
-                if value.state["Settlement"]:
-                    self.state.append(1)
-                elif value.state['City']:
-                    self.state.append(2)
-            elif value.state["Player"].name != playerName:
-                if value.state["Settlement"]:
-                    self.state.append(-1)
-                elif value.state['City']:
-                    self.state.append(-2)
-
-        # 167-239 for each edge, if nothing is on it, 0
+        # 114-185 for each edge, if nothing is on it, 0
         #                if myself is on it, 1
         #                if opponent is on it, -1
 
@@ -183,6 +166,7 @@ class catanAIGame():
         roads = [(thePlayer.buildGraph["ROADS"], thePlayer.name) for thePlayer in playerList]
         myRoads = [road[0] for road in roads if road[1]==playerName]
         oppRoads = [road[0] for road in roads if road[1]!=playerName]
+        #TODO: need to add logic to check direct order and reverse order of the edge!!!
         for edge in edgeBank:
             if edge in myRoads:
                 self.state.append(1)
@@ -192,40 +176,40 @@ class catanAIGame():
                 self.state.append(0)
 
 
-        # # this code is used to extract edge bank
-        # for key, value in self.board.boardGraph.items():
-        #     source = value.pixelCoordinates
-        #     if len(value.edgeList) == 3:
-        #         currEdge1 = (source, value.edgeList[0])
-        #         currEdge2 = (source, value.edgeList[1])
-        #         currEdge3 = (source, value.edgeList[2])
-        #         currEdge1eq = (value.edgeList[0], source)
-        #         currEdge2eq = (value.edgeList[1], source)
-        #         currEdge3eq = (value.edgeList[2], source)
-        #         if (currEdge1 not in edgeBank) and (currEdge1eq not in edgeBank):
-        #             edgeBank.append(currEdge1)
-        #         if (currEdge2 not in edgeBank) and (currEdge2eq not in edgeBank):
-        #             edgeBank.append(currEdge2)
-        #         if (currEdge3 not in edgeBank) and (currEdge3eq not in edgeBank):
-        #             edgeBank.append(currEdge3)
-        #     elif len(value.edgeList) == 2:
-        #         currEdge1 = (source, value.edgeList[0])
-        #         currEdge2 = (source, value.edgeList[1])
-        #         currEdge1eq = (value.edgeList[0], source)
-        #         currEdge2eq = (value.edgeList[1], source)
-        #         if (currEdge1 not in edgeBank) and (currEdge1eq not in edgeBank):
-        #             edgeBank.append(currEdge1)
-        #         if (currEdge2 not in edgeBank) and (currEdge2eq not in edgeBank):
-        #             edgeBank.append(currEdge2)
+        '''# this code is used to extract edge bank
+        for key, value in self.board.boardGraph.items():
+            source = value.pixelCoordinates
+            if len(value.edgeList) == 3:
+                currEdge1 = (source, value.edgeList[0])
+                currEdge2 = (source, value.edgeList[1])
+                currEdge3 = (source, value.edgeList[2])
+                currEdge1eq = (value.edgeList[0], source)
+                currEdge2eq = (value.edgeList[1], source)
+                currEdge3eq = (value.edgeList[2], source)
+                if (currEdge1 not in edgeBank) and (currEdge1eq not in edgeBank):
+                    edgeBank.append(currEdge1)
+                if (currEdge2 not in edgeBank) and (currEdge2eq not in edgeBank):
+                    edgeBank.append(currEdge2)
+                if (currEdge3 not in edgeBank) and (currEdge3eq not in edgeBank):
+                    edgeBank.append(currEdge3)
+            elif len(value.edgeList) == 2:
+                currEdge1 = (source, value.edgeList[0])
+                currEdge2 = (source, value.edgeList[1])
+                currEdge1eq = (value.edgeList[0], source)
+                currEdge2eq = (value.edgeList[1], source)
+                if (currEdge1 not in edgeBank) and (currEdge1eq not in edgeBank):
+                    edgeBank.append(currEdge1)
+                if (currEdge2 not in edgeBank) and (currEdge2eq not in edgeBank):
+                    edgeBank.append(currEdge2)
 
-        # # visualizae edgeBank order
-        # self.boardView= catanGameView(self.board, self)
-        # for i in range(0,72):
-        #     self.boardView.draw_road(edgeToDraw = edgeBank[i], roadColor=(255, 0,0))
-        #     pygame.display.update()
-        #     pygame.time.delay(100)
+        # visualizae edgeBank order
+        self.boardView= catanGameView(self.board, self)
+        for i in range(0,72):
+            self.boardView.draw_road(edgeToDraw = edgeBank[i], roadColor=(255, 0,0))
+            pygame.display.update()
+            pygame.time.delay(100)'''
         
-        # 239-287 for each player, stores if is myself, 
+        # 186-233 for each player, stores if is myself, 
         #                                       road built, 
         #                                       cities built, 
         #                                       settlement built, 
@@ -251,6 +235,159 @@ class catanAIGame():
             self.state.append(player.resources['WHEAT'])
             self.state.append(player.resources['WOOD'])
             self.state.append(player.resources['SHEEP'])
+
+    # compute the state of the current board
+    # simplified for initial placement
+    # playerName is an integer that describes the current player
+    # playerNameList is a list containing each player's name in the order of placement
+    def tostate_simple(self, playerName, playerNameList):
+        # extract hex state
+        # 0: the order at check player is placed
+        self.state = []
+        self.state.append(playerNameList.index(playerName))
+        ######################### below are static state ###############################
+        # 1-19: number on the hex
+        for key, value in self.board.hexTileDict.items():
+            if value.resource.num == None:
+                self.state.append(0)
+            else:
+                self.state.append(value.resource.num)
+
+        # 20-38: resource on the hex
+        Resource_Dict = {'DESERT':0, 'ORE':1, 'BRICK':2, 'WHEAT':3, 'WOOD':4, 'SHEEP':5}
+        for key, value in self.board.hexTileDict.items():
+            self.state.append(Resource_Dict[value.resource.type])
+            if value.robber:
+                 robberLoc = value.index
+        
+        # 39-57: locatioon of the port
+        #        indices of the vertices that connects to port
+        for key, value in self.board.boardGraph.items():
+            if value.port:
+                self.state.append(value.vertexIndex)
+
+        ######################### below are dynamic state ###############################
+        # 60-68: settlement placement
+        # 60, 61 (my settlement placement)
+        #        if placed, (vertexindex)
+        #        if not placement, (0)
+        # 62, 63 (oppoent #1's settlement placement)
+        #        if placed, (vertexindex)
+        #        if not placement, 0
+        # 64, 65 (oppoent #2's settlement placement)
+        #        if placed, (vertexindex)
+        #        if not placement, 0
+        # 66, 67 (oppoent #3's settlement placement)
+        #        if placed, (vertexindex)
+        #        if not placement, 0
+        playerList  = list(self.playerQueue.queue)
+        start = int(playerName)-1                  # start from the 0 index of state
+        for i in range(start, start+len(playerList)):
+            currPlayer = playerList[i%len(playerList)]
+            settlements = currPlayer.buildGraph['SETTLEMENTS']
+            if len(settlements) == 0:
+                self.state.append(0)
+                self.state.append(0)
+            elif len(settlements) == 1:
+                self.state.append(self.pixel_to_vertex_index_dict[settlements[0]])
+                self.state.append(0)
+            else:
+                self.state.append(self.pixel_to_vertex_index_dict[settlements[0]])
+                self.state.append(self.pixel_to_vertex_index_dict[settlements[1]])
+
+        # 68-76: road placement
+        # 60, 61 (my road placement)
+        #        if placed, (edgeindex)
+        #        if not placement, (0)
+        # 62, 63 (oppoent #1's road placement)
+        #        if placed, (edgeindex)
+        #        if not placement, 0
+        # 64, 65 (oppoent #2's raod placement)
+        #        if placed, (edgeindex)
+        #        if not placement, 0
+        # 66, 67 (oppoent #3's road placement)
+        #        if placed, (edgeindex)
+        #        if not placement, 0
+        #
+        edgeBank = [(Point(x=580.0, y=400.0), Point(x=540.0, y=330.72)), (Point(x=580.0, y=400.0), Point(x=540.0, y=469.28)), 
+                    (Point(x=580.0, y=400.0), Point(x=660.0, y=400.0)), (Point(x=540.0, y=330.72), Point(x=460.0, y=330.72)), 
+                    (Point(x=540.0, y=330.72), Point(x=580.0, y=261.44)), (Point(x=460.0, y=330.72), Point(x=420.0, y=400.0)), 
+                    (Point(x=460.0, y=330.72), Point(x=420.0, y=261.44)), (Point(x=420.0, y=400.0), Point(x=460.0, y=469.28)), 
+                    (Point(x=420.0, y=400.0), Point(x=340.0, y=400.0)), (Point(x=460.0, y=469.28), Point(x=540.0, y=469.28)), 
+                    (Point(x=460.0, y=469.28), Point(x=420.0, y=538.56)), (Point(x=540.0, y=469.28), Point(x=580.0, y=538.56)), 
+                    (Point(x=580.0, y=261.44), Point(x=540.0, y=192.15)), (Point(x=580.0, y=261.44), Point(x=660.0, y=261.44)), 
+                    (Point(x=540.0, y=192.15), Point(x=460.0, y=192.15)), (Point(x=540.0, y=192.15), Point(x=580.0, y=122.87)), 
+                    (Point(x=460.0, y=192.15), Point(x=420.0, y=261.44)), (Point(x=460.0, y=192.15), Point(x=420.0, y=122.87)), 
+                    (Point(x=420.0, y=261.44), Point(x=340.0, y=261.44)), (Point(x=700.0, y=330.72), Point(x=660.0, y=261.44)), 
+                    (Point(x=700.0, y=330.72), Point(x=660.0, y=400.0)), (Point(x=700.0, y=330.72), Point(x=780.0, y=330.72)), 
+                    (Point(x=660.0, y=261.44), Point(x=700.0, y=192.15)), (Point(x=660.0, y=400.0), Point(x=700.0, y=469.28)), 
+                    (Point(x=700.0, y=469.28), Point(x=660.0, y=538.56)), (Point(x=700.0, y=469.28), Point(x=780.0, y=469.28)), 
+                    (Point(x=580.0, y=538.56), Point(x=660.0, y=538.56)), (Point(x=580.0, y=538.56), Point(x=540.0, y=607.85)), 
+                    (Point(x=660.0, y=538.56), Point(x=700.0, y=607.85)), (Point(x=420.0, y=538.56), Point(x=460.0, y=607.85)), 
+                    (Point(x=420.0, y=538.56), Point(x=340.0, y=538.56)), (Point(x=460.0, y=607.85), Point(x=540.0, y=607.85)), 
+                    (Point(x=460.0, y=607.85), Point(x=420.0, y=677.13)), (Point(x=540.0, y=607.85), Point(x=580.0, y=677.13)), 
+                    (Point(x=340.0, y=400.0), Point(x=300.0, y=469.28)), (Point(x=340.0, y=400.0), Point(x=300.0, y=330.72)), 
+                    (Point(x=300.0, y=469.28), Point(x=340.0, y=538.56)), (Point(x=300.0, y=469.28), Point(x=220.0, y=469.28)), 
+                    (Point(x=340.0, y=538.56), Point(x=300.0, y=607.85)), (Point(x=340.0, y=261.44), Point(x=300.0, y=330.72)), 
+                    (Point(x=340.0, y=261.44), Point(x=300.0, y=192.15)), (Point(x=300.0, y=330.72), Point(x=220.0, y=330.72)), 
+                    (Point(x=580.0, y=122.87), Point(x=540.0, y=53.59)), (Point(x=580.0, y=122.87), Point(x=660.0, y=122.87)), 
+                    (Point(x=540.0, y=53.59), Point(x=460.0, y=53.59)), (Point(x=460.0, y=53.59), Point(x=420.0, y=122.87)), 
+                    (Point(x=420.0, y=122.87), Point(x=340.0, y=122.87)), (Point(x=700.0, y=192.15), Point(x=660.0, y=122.87)), 
+                    (Point(x=700.0, y=192.15), Point(x=780.0, y=192.15)), (Point(x=820.0, y=261.44), Point(x=780.0, y=192.15)), 
+                    (Point(x=820.0, y=261.44), Point(x=780.0, y=330.72)), (Point(x=780.0, y=330.72), Point(x=820.0, y=400.0)), 
+                    (Point(x=820.0, y=400.0), Point(x=780.0, y=469.28)), (Point(x=780.0, y=469.28), Point(x=820.0, y=538.56)), 
+                    (Point(x=820.0, y=538.56), Point(x=780.0, y=607.85)), (Point(x=700.0, y=607.85), Point(x=780.0, y=607.85)), 
+                    (Point(x=700.0, y=607.85), Point(x=660.0, y=677.13)), (Point(x=580.0, y=677.13), Point(x=660.0, y=677.13)), 
+                    (Point(x=580.0, y=677.13), Point(x=540.0, y=746.41)), (Point(x=420.0, y=677.13), Point(x=460.0, y=746.41)), 
+                    (Point(x=420.0, y=677.13), Point(x=340.0, y=677.13)), (Point(x=460.0, y=746.41), Point(x=540.0, y=746.41)), 
+                    (Point(x=300.0, y=607.85), Point(x=340.0, y=677.13)), (Point(x=300.0, y=607.85), Point(x=220.0, y=607.85)), 
+                    (Point(x=220.0, y=469.28), Point(x=180.0, y=538.56)), (Point(x=220.0, y=469.28), Point(x=180.0, y=400.0)), 
+                    (Point(x=180.0, y=538.56), Point(x=220.0, y=607.85)), (Point(x=220.0, y=330.72), Point(x=180.0, y=400.0)), 
+                    (Point(x=220.0, y=330.72), Point(x=180.0, y=261.44)), (Point(x=300.0, y=192.15), Point(x=220.0, y=192.15)), 
+                    (Point(x=300.0, y=192.15), Point(x=340.0, y=122.87)), (Point(x=220.0, y=192.15), Point(x=180.0, y=261.44))]
+                    # start from the 0 index of state
+        for i in range(start, start+len(playerList)):
+            currPlayer = playerList[i%len(playerList)]
+            roads = currPlayer.buildGraph['ROADS']
+            if len(roads) == 0:
+                self.state.append(0)
+                self.state.append(0)
+            elif len(roads) == 1:
+                try:
+                    self.state.append(edgeBank.index((roads[0][0], roads[0][1])))
+                except:
+                    self.state.append(edgeBank.index((roads[0][1], roads[0][0])))
+                self.state.append(0)
+            else:
+                try:
+                    self.state.append(edgeBank.index((roads[0][0], roads[0][1])))
+                except:
+                    self.state.append(edgeBank.index((roads[0][1], roads[0][0])))
+                
+                try:
+                    self.state.append(edgeBank.index((roads[1][0], roads[1][1])))
+                except:
+                    self.state.append(edgeBank.index((roads[1][1], roads[1][0])))
+
+        return self.state
+
+    def toaction_simple(self, playerName, s, ns):
+        # action space is coupled with state space
+        # but this is not a problem. This shuold be dealt with duing deployment phase
+        # only allow action in set {a1, a2, ... an} \in allowable(s)
+        # here the maximum action will be considered
+        # there are 72 possible edges, and 54 possible vertices
+        self.action = []
+        diff = [ns[i]-s[i] for i in range(57, 73)]# extract difference between current state and next state
+        if diff[0] != 0:
+            self.action.append(diff[0])
+        else:
+            self.action.append(diff[1])
+        if diff[8] != 0:
+            self.action.append(diff[8])
+        else:
+            self.action.append(diff[9])
+        return self.action
 
     def create_player_list(self, special_placement_type="random"):
         #Initialize new players with names and colors
@@ -290,8 +427,13 @@ class catanAIGame():
 
         #Build Settlements and roads of each player forwards
         random.shuffle(playerList)
+        playerNameList=[thePlayer.name for thePlayer in playerList]
         order = 1
         for player_i in playerList:
+            # extract state
+            s = self.tostate_simple(player_i.name, playerNameList)
+            # print(self.state[0])
+            # print(self.state[57:73])
             player_i.placementOrder = order
             order += 1
             player_i.initial_setup(self.board)
@@ -300,20 +442,40 @@ class catanAIGame():
                 self.boardView.displayGameScreen()
             if self.ifprint:
                 pygame.time.delay(1000)
+            # extract next state
+            ns = self.tostate_simple(player_i.name, playerNameList)
+            # print(self.state[0])
+            # print(self.state[57:73])
+            a = self.toaction_simple(player_i.name, s, ns)
+            # print(s[57:73])
+            # print(ns[57:73])
+            self.q[player_i.name] = {"s1":s, "a1":a}
 
 
         #Build Settlements and roads of each player reverse
         playerList.reverse()
         for player_i in playerList: 
+            s = self.tostate_simple(player_i.name, playerNameList)
+            # print(self.state[0])
+            # print(self.state[57:73])
             player_i.initial_setup(self.board)
             pygame.event.pump()
             if self.ifGUI:
                 self.boardView.displayGameScreen()
             if self.ifprint:
                 pygame.time.delay(1000)
-            
+            ns = self.tostate_simple(player_i.name, playerNameList)
+            # print(self.state[0])
+            # print(self.state[57:73])
+            a = self.toaction_simple(player_i.name, s, ns)
+            # print(s[57:73])
+            # print(ns[57:73])
+            # print(len(self.state))
             if self.ifprint:
                 print("Player {} starts with {} resources".format(player_i.name, len(player_i.setupResources)))
+            self.q[player_i.name]["a2"] = a
+            self.q[player_i.name]["s2"] = s
+            self.q[player_i.name]["s3"] = ns
 
             #Initial resource generation
             #check each adjacent hex to latest settlement
@@ -323,10 +485,17 @@ class catanAIGame():
                     player_i.resources[resourceGenerated] += 1
                     if self.ifprint:
                         print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
+                
+        print(self.q["1"]["s1"][57:73])
+        print(self.q["1"]["a1"])
+        print(self.q["1"]["s2"][57:73])
+        print(self.q["1"]["a2"])
+        print(self.q["1"]["s3"][57:73])
+        
+
         if self.ifprint:
             pygame.time.delay(10000)
         self.gameSetup = False
-
 
     #Function to roll dice 
     def rollDice(self):
@@ -423,8 +592,6 @@ class catanAIGame():
                 if self.ifprint:
                     print("Player {} takes Largest Army {}".format(player_i.name, prevPlayer))
 
-
-
     #Function that runs the main game loop with all players and pieces
     def playCatan(self):
         #self.board.displayBoard() #Display updated board
@@ -432,7 +599,7 @@ class catanAIGame():
         while (self.gameOver == False):
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
-                self.tostate(currPlayer.name)
+                # self.tostate(currPlayer.name)
                 # TODO: add self.action
                 # print(self.state)
                 # currPlayer.sarn.append([self.state, ])

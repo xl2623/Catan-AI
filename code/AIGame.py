@@ -429,7 +429,8 @@ class catanAIGame():
 
     #Function to initialize players + build initial settlements for players
     def build_initial_settlements(self):
-        playerList = self.create_player_list()
+        playerList = self.create_player_list("learning")
+        # choose from heuristic, random, learning
 
         #Build Settlements and roads of each player forwards
         random.shuffle(playerList)
@@ -442,7 +443,7 @@ class catanAIGame():
             # print(self.state[57:73])
             player_i.placementOrder = order
             order += 1
-            player_i.initial_setup(self.board)
+            player_i.initial_setup(self.board, state=s)
             pygame.event.pump()
             if self.ifGUI:
                 self.boardView.displayGameScreen()
@@ -464,7 +465,7 @@ class catanAIGame():
             s = self.tostate_simple(player_i.name, playerNameList)
             # print(self.state[0])
             # print(self.state[57:73])
-            player_i.initial_setup(self.board)
+            player_i.initial_setup(self.board, state=s)
             pygame.event.pump()
             if self.ifGUI:
                 self.boardView.displayGameScreen()
@@ -659,12 +660,12 @@ class catanAIGame():
                             print("Exiting game in 5 seconds...")
                             pygame.time.delay(5000)
                         else:
-                            # print("====================================================")
-                            # print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
+                            print("====================================================")
+                            print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
 
-                            # return currPlayer.name, int(numTurns/4)
-                            special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
-                            return special_player.victoryPoints
+                            return currPlayer.name, int(numTurns/4)
+                            # special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                            # return special_player.victoryPoints
                         break
 
                 if(self.gameOver):
@@ -673,10 +674,10 @@ class catanAIGame():
                     # while(runTime < 5000): #5 second delay prior to quitting
                     #     runTime = pygame.time.get_ticks() - startTime
 
-                    special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                    # special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
                     
-                    return special_player.victoryPoints
-
+                    # return special_player.victoryPoints
+                    break
 
 def strnice(input):
     result = ""
@@ -685,11 +686,12 @@ def strnice(input):
     return result
 
 if __name__=="__main__":
-    iterations = 180
-    f1 = open("data.txt", "a")
-    for i in range(0,iterations):
-        newGame_AI = catanAIGame()
-        playerList = list(newGame_AI.playerQueue.queue)
-        for player in playerList:
-            f1.write(strnice(newGame_AI.q[player.name]["s1"]+newGame_AI.q[player.name]["a1"]+newGame_AI.q[player.name]["s2"]+newGame_AI.q[player.name]["a2"]+newGame_AI.q[player.name]["s3"])+str(newGame_AI.q[player.name]["r"])+'\n')
-        print(i)
+    newGame_AI = catanAIGame(specialPlayerName="1")
+    # iterations = 180
+    # f1 = open("data.txt", "a")
+    # for i in range(0,iterations):
+    #     newGame_AI = catanAIGame()
+    #     playerList = list(newGame_AI.playerQueue.queue)
+    #     for player in playerList:
+    #         f1.write(strnice(newGame_AI.q[player.name]["s1"]+newGame_AI.q[player.name]["a1"]+newGame_AI.q[player.name]["s2"]+newGame_AI.q[player.name]["a2"]+newGame_AI.q[player.name]["s3"])+str(newGame_AI.q[player.name]["r"])+'\n')
+    #     print(i)

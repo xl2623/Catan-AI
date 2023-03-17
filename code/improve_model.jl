@@ -4,18 +4,14 @@ using Flux
 """
     Catan Game Wrappers
 """
-# pushfirst!(pyimport("sys")."path", "/home/polfr/Documents/Stanford/stanford/AA228/Catan-AI/code")
 
-# py"""
-# import sys
+pushfirst!(pyimport("sys")."path", "")
 
-# def setup():
-#     print("test")
-#     sys.path.insert(0, "~/home/polfr/Documents/Stanford/stanford/AA228/Catan-AI/code")
-# """
+play_game_with_policy = pyimport("AIGame_Wrapper")["play_game_with_policy"]
 
-# py"setup"()
-# function_name = pyimport("AIGame_Wrapper")["play_game_with_policy"]
+function play_game(policy)
+    return play_game_with_policy(policy)
+end
 
 """
     Gradient Q Learning
@@ -86,13 +82,7 @@ end
     Epsilon-Greedy Exploration
 """
 
-mutable struct EpsilonGreedyExploration
-    epsilon # probability of random arm
-end
-
-function (policy::EpsilonGreedyExploration)(model, s, usable_actions)
-    println("here")
-    A, epsilon = model.A, π.epsilon
+function epsilonGreedyExploration(model, epsilon, s, usable_actions)
     if rand() < epsilon
         return rand(usable_actions)
     end
@@ -126,9 +116,13 @@ function main()
 
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
+    # Policy
+    epsilon = 0
+    exploration_policy(qlearning, s, usable_actions) = epsilonGreedyExploration(epsilon,qlearning, s, usable_actions)
+
     # Play games
     current_policy(s, usable_actions) = exploration_policy(qlearning, s, usable_actions)
-    vals = py"play_game"(current_policy)
+    vals = play_game(current_policy)
 
     print(vals)
 end

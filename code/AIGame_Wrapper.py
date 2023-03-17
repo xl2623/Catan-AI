@@ -142,6 +142,7 @@ class AIGame():
 """
 
 def play_game_with_policy(placement_policy):
+    print("Made it in")
     game      = AIGame()
 
     s         = game.start()

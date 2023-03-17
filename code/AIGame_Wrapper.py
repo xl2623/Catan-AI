@@ -119,10 +119,11 @@ class AIGame():
             # Run thru the game
             try:
                 vic_points = self.catan_game.playCatan()
-            except:
+            except Exception as e:
                 # Sometimes the sim crashes
                 # Hard to debug since it's literally 1/10,000 times.
                 # Just ignore those sims...
+                # print(e)
                 vic_points = -1
             
             return self.get_state(), vic_points-10   
@@ -142,7 +143,6 @@ class AIGame():
 """
 
 def play_game_with_policy(placement_policy):
-    print("Made it in")
     game      = AIGame()
 
     s         = game.start()

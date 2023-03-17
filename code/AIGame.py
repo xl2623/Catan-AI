@@ -599,8 +599,8 @@ class catanAIGame():
         while (self.gameOver == False):
             if numTurns > 500:
                 self.gameOver == True
-                print("gameover triggered")
-                self.triggered == True
+                # print("gameover triggered")
+                # self.triggered == True
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
                 # self.tostate(currPlayer.name)
@@ -649,6 +649,7 @@ class catanAIGame():
                     #Check if game is over
                     if currPlayer.victoryPoints >= self.maxPoints:
                         for player in list(self.playerQueue.queue):
+                            continue
                             self.q[player.name]['r'] = player.victoryPoints-self.maxPoints
                         self.gameOver = True
                         self.turnOver = True

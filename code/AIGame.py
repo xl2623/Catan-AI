@@ -260,11 +260,11 @@ class catanAIGame():
             if value.robber:
                  robberLoc = value.index
         
-        # 39-57: locatioon of the port
-        #        indices of the vertices that connects to port
-        for key, value in self.board.boardGraph.items():
-            if value.port:
-                self.state.append(value.vertexIndex)
+        # # 39-57: locatioon of the port
+        # #        indices of the vertices that connects to port
+        # for key, value in self.board.boardGraph.items():
+        #     if value.port:
+        #         self.state.append(value.vertexIndex)
 
         ######################### below are dynamic state ###############################
         # 60-68: settlement placement
@@ -378,7 +378,7 @@ class catanAIGame():
         # here the maximum action will be considered
         # there are 72 possible edges, and 54 possible vertices
         self.action = []
-        diff = [ns[i]-s[i] for i in range(57, 73)]# extract difference between current state and next state
+        diff = [ns[i]-s[i] for i in range(39, 55)]# extract difference between current state and next state
         if diff[0] != 0:
             self.action.append(diff[0])
         else:
@@ -597,6 +597,9 @@ class catanAIGame():
         #self.board.displayBoard() #Display updated board
         numTurns = 0
         while (self.gameOver == False):
+            if numTurns >= 500:
+                self.gameOver = True
+
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
                 # self.tostate(currPlayer.name)
@@ -655,7 +658,10 @@ class catanAIGame():
                         else:
                             # print("====================================================")
                             # print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
-                            return currPlayer.name, int(numTurns/4)
+
+                            # return currPlayer.name, int(numTurns/4)
+                            special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                            return special_player.victoryPoints
                         break
 
                 if(self.gameOver):
@@ -664,7 +670,9 @@ class catanAIGame():
                     # while(runTime < 5000): #5 second delay prior to quitting
                     #     runTime = pygame.time.get_ticks() - startTime
 
-                    break
+                    special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                    
+                    return special_player.victoryPoints
                                    
 if __name__=="__main__":
     #Initialize new game and run

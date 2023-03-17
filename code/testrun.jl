@@ -3,6 +3,7 @@
 using Flux
 using BSON: @save, @load
 using LinearAlgebra
+using Zygote
 # using POMDPModels
 # using POMDPSimulators
 # using POMDPTools
@@ -46,11 +47,12 @@ end
 # define GradientQLearning
 𝒜 = [[i, j] for j = 1:72 for i=1:54];
 γ = 0.99;
-global model = Chain(
-    Dense(57, 32, Flux.relu),
-    Dense(32, 16, Flux.relu),
-    Dense(16, 1),
-)
+# global model = Chain(
+#     Dense(57, 32, Flux.relu),
+#     Dense(32, 16, Flux.relu),
+#     Dense(16, 1),
+# )
+@load "/home/thomas_ubuntu/Catan-AI-1/new_pass_largeset.bson" model
 function Q(theta,s,a)
     params(model) = theta
     input = vcat(s, a)
@@ -59,8 +61,8 @@ end
 function ∇Q(theta,s,a)
     return gradient(()->sum(Q(theta,s,a)), theta)
 end 
-theta = params(model);
-α = 0.0001
+theta = Flux.params(model);
+α = 0.01
 
 myModel = GradientQLearning(𝒜, γ, Q, ∇Q, theta, α);
 # s1 = [0 3 4 9 5 6 5 11 8 2 4 8 11 3 9 0 6 10 12 10 3 5 4 1 4 2 5 2 3 4 3 4 2 5 0 5 1 1 3 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1]
@@ -78,7 +80,7 @@ function myRead(filename)
     return D, df;
 end
 
-D, df= myRead("/Users/thomasliu/Catan-AI-1/code/data_medium.csv");
+D, df= myRead("/home/thomas_ubuntu/Catan-AI-1/code/data_medium.csv");
 global S1 = D[:, 1:55]
 global A1 = D[:, 56:57]
 global R1 = [i*0 for i in range(1, size(D, 1))]
@@ -86,8 +88,10 @@ global S2 = D[:, 58:112]
 global A2 = D[:, 113:114]
 global R2 = D[:, 170]
 global S3 = D[:, 115:169]
-@time begin
-for m in range(1, 1)
+
+for m in range(1, 10)
+    # print(myModel.theta[1][1])
+    # print("\n")
     for i in range(1, size(D, 1))
         s1 = S1[i, :];
         a1 = A1[i, :];
@@ -105,13 +109,21 @@ for m in range(1, 1)
         # print(r2)
         # print('\n')
         update!(myModel, s2, a2, r2, s3);
+        if mod(i,1000) == 0
+            print((m, i))
+            print("\n")
+        end
+        
     end
-    print(m)
-    print('\n')
-end
 end
 
-# @save "first_pass_largeset.bson" myModel
+
+# @save "new_pass_largeset.bson" model
+
+
+
+
+
 
 
 # myGradient = ∇Q(theta,transpose(s1),transpose(a1))

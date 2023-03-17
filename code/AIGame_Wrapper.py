@@ -50,15 +50,142 @@ def play_game(placement_policy):
 
     return winner, turns
 
-def simulate(game, model, exploration_policy, k, s=None):
-    # TODO: Deal w initial state
+class AIGame():
+    def __init__(self):
+        # Create game object
+        self.special_player_name = '1'
+        self.round = 1
+        self.player_order = 1
+        self.special_player_order = -1
+        self.player_name_list = []
+        
+        self.reset()
+    
+    def start(self):
+        # Randomize player order        
+        self.player_list = self.catan_game.create_player_list(special_placement_type="learning")
+        random.shuffle(self.player_list)
+        
+        player_order = 1
+        for player_i in self.player_list:
+            # Establish playing order
+            player_i.placementOrder = player_order
+            if player_i.name == self.special_player_name:
+                self.special_player_order = player_order
+            self.player_name_list.append(player_i.name)
+            
+            player_order += 1
+            
+        # Play until we reach the agent
+        self.player_order = 1
+        for player_i in self.player_list:
+            if player_i.name == self.special_player_name:
+                self.increment_player_order()
+                break
+            else:
+                player_i.initial_setup(self.catan_game.board)
+                self.increment_player_order()
+                
+        # Return game state
+        return self.get_state()
+          
+    def increment_player_order(self):
+        if self.player_order < 4:
+            self.player_order += 1
+        else:
+            self.player_order = 1
+    
+    def get_state(self):
+        return self.catan_game.tostate_simple(self.special_player_name, self.player_name_list) 
+     
+    def get_usable_action_space(self):
+        # TODO: also get road actionable space
+        return self.catan_game.board.get_setup_settlements(None)
+    
+    def play(self, action):
+        action = self.translate_action_to_sim(action)
+        
+        # Find player & play the player action
+        self.player_list[self.special_player_order-1].initial_setup(self.catan_game.board, action)
+
+        # Round 1: 1st placement
+        if self.round == 1:
+            self.round = 2
+            
+            # Still some initial placements to be done
+            if self.player_order != 1:
+                for idx, player_i in enumerate(self.player_list):
+                    if player_i.name == self.special_player_name:
+                        self.increment_player_order()
+                        break
+                    elif idx + 1 >= self.player_order:
+                        player_i.initial_setup(self.catan_game.board)
+                        self.increment_player_order()
+            
+            # Do the next set of placements
+            self.player_list.reverse()
+            
+            self.player_order = 1
+            for player_i in self.player_list:
+                if player_i.name == self.special_player_name:
+                    self.increment_player_order()
+                    break
+                else:
+                    player_i.initial_setup(self.catan_game.board)
+                    self.increment_player_order()
+            
+            # Return 0 reward and the state
+            return self.get_state(), 0.0
+        
+        # Round 2: 2nd placement
+        else:
+            # Still some second placements to be done
+            if self.player_order != 1:
+                for idx, player_i in enumerate(self.player_list):
+                    if player_i.name == self.special_player_name:
+                        self.increment_player_order()
+                        break
+                    elif idx + 1 >= self.player_order:
+                        player_i.initial_setup(self.catan_game.board)
+                        self.increment_player_order()
+        
+            # Run thru the game
+            winner, _ = self.catan_game.playCatan()
+            
+            reward = 1 if winner == self.special_player_name else -1
+            
+            return self.get_state(), reward   
+    
+    def translate_action_to_sim(self, action):
+        # TODO: need to map this to the appropiate settlement vertex
+        return action
+    
+    def reset(self):
+        self.player_order = 1
+        self.round = 1
+        self.catan_game = catanAIGame(ifprint=False, ifGUI=False, specialPlayerName=self.special_player_name, selfstart=False)
+        print(self.get_usable_action_space())
+
+def simulate(game, model, exploration_policy, k):
     for i in range(0,k):
-        # I think we may want to do two playes here
-        # Where two playes are equivalent to one game
-        a = exploration_policy(model, s)
+        # Get initial board state
+        s = game.start()
+        
+        # 1st placement
+        # TODO: Get allowable action space
+        usable_actions = game.get_usable_action_space()
+        a = exploration_policy.action(model, s, usable_actions)
         sp, r  = game.play(s, a)
-        model.update(s, a, r, sp)
-        s = sp
+        usable_actions = game.get_usable_action_space()
+        model.update(s, a, r, s, usable_actions)
+        
+        # 2nd placement
+        ap = exploration_policy.action(model, sp, usable_actions)
+        spp, rp = game.play(sp, ap)
+        model.update(sp, ap, rp, spp, ignore_expected_util=True)
+                
+        # Reset Catan game
+        game.reset()
 
 """
     Gradient Q Learning functions
@@ -104,12 +231,19 @@ def random_placement_policy(board, possibleVertices):
     return vertexToBuild
 
 def main():
+    # Game class
+    game = AIGame()
+    
+    # TODO: Add roads
+    state_space_size = 76
+    action_space_full_size = 54
+    
     # Gradient Q-Learning model
-    A = np.arange(0,37,1,dtype=int)
+    A = np.arange(0,action_space_full_size,1,dtype=int)
     gamma = 0.95
     Q = compute_Q_NN
     gradQ = compute_gradQ_NN
-    theta0 = np.random.rand(37,)
+    theta0 = np.random.rand(state_space_size + action_space_full_size,)
     alpha = 0.2
 
     model = GradientQLearning(A, gamma, Q, gradQ, theta0, alpha)
@@ -119,12 +253,12 @@ def main():
     Pi = EpsilonGreedyExploration(epsilon)
 
     # Simulation
-    k = 20      # number of steps to simulate
-    simulate(play_game, model, Pi, k)
+    k = 1      # number of games to simulate
+    simulate(game, model, Pi, k)
 
 if __name__ == "__main__":
-    placement_policy = random_placement_policy
-
-    winner, turns = play_game(placement_policy)
-
-    print(winner)
+    # placement_policy = random_placement_policy
+    # winner, turns = play_game(placement_policy)
+    # print(winner)
+    
+    main()

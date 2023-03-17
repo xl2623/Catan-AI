@@ -15,7 +15,12 @@ class GradientQLearning():
     def lookahead(self, s, a):
         return self.Q(s,a)
 
-    def update(self, s, a, r, sp):
-        u = np.max([self.Q(self.theta, sp, ap) for ap in self.A])
+    def update(self, s, a, r, sp, usable_actions=None, ignore_expected_util=False):
+        if ignore_expected_util:
+            u = 0
+        else:
+            # Actions that do not belong to the usable action space are given a low q-value
+            u = np.max([self.Q(self.theta, sp, ap) if ap in usable_actions else -np.inf for ap in self.A])
+            
         grad = (r + self.gamma*u - self.Q(self.theta,s,a))*self.gradQ(self.theta, s, a)
         self.theta += self.alpha*scale_gradient(grad, 1)

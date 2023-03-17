@@ -653,8 +653,8 @@ class catanAIGame():
                             print("Exiting game in 5 seconds...")
                             pygame.time.delay(5000)
                         else:
-                            print("====================================================")
-                            print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
+                            # print("====================================================")
+                            # print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
                             return currPlayer.name, int(numTurns/4)
                         break
 

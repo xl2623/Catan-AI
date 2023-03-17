@@ -181,12 +181,10 @@ def random_placement_policy(board, possibleVertices):
     return vertexToBuild
 
 def simulate(game, model, exploration_policy, k):
-    rp = -1
-    k = 0
     init_theta = model.theta
-    print(model.theta)
-    # for i in range(0,k):
-    while(rp == -1):
+    wins  = 0
+
+    for i in range(0,k):
         # Get initial board state
         s = game.start()
         
@@ -201,16 +199,19 @@ def simulate(game, model, exploration_policy, k):
         ap = exploration_policy.action(model, sp, usable_actions)
         spp, rp = game.play(ap)
         model.update(sp, ap, rp, spp, ignore_expected_util=True)
-
-        print(rp)
-        k += 1
                 
         # Reset Catan game
         game.reset()
-    
-    print(model.theta)
-    print(init_theta - model.theta)
-    print(k)
+
+        wins = wins + 1 if rp == 1 else wins
+
+        if i % 1000 == 0:
+            print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+            print('Wins: ' + str(wins))
+            print('Change in theta: ' + str(np.linalg.norm(init_theta - model.theta)))
+            wins = 0
+            init_theta = model.theta
+            print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
 
 def main():
     # Game class
@@ -225,17 +226,17 @@ def main():
     gamma = 0.95
     Q = compute_Q_NN
     gradQ = compute_gradQ_NN
-    theta0 = np.random.rand(state_space_size + 1,)
+    theta0 = np.random.rand(state_space_size + 1,)/100.0
     alpha = 0.2
 
     model = GradientQLearning(A, gamma, Q, gradQ, theta0, alpha)
 
     # Exploration-Exploipation model
-    epsilon = 0.1
+    epsilon = 0.5
     Pi = EpsilonGreedyExploration(epsilon)
 
     # Simulation
-    k = 1      # number of games to simulate
+    k = 10000      # number of games to simulate
     simulate(game, model, Pi, k)
 
 if __name__ == "__main__":

@@ -260,11 +260,11 @@ class catanAIGame():
             if value.robber:
                  robberLoc = value.index
         
-        # 39-57: locatioon of the port
-        #        indices of the vertices that connects to port
-        for key, value in self.board.boardGraph.items():
-            if value.port:
-                self.state.append(value.vertexIndex)
+        # # 39-57: locatioon of the port
+        # #        indices of the vertices that connects to port
+        # for key, value in self.board.boardGraph.items():
+        #     if value.port:
+        #         self.state.append(value.vertexIndex)
 
         ######################### below are dynamic state ###############################
         # 60-68: settlement placement
@@ -378,7 +378,7 @@ class catanAIGame():
         # here the maximum action will be considered
         # there are 72 possible edges, and 54 possible vertices
         self.action = []
-        diff = [ns[i]-s[i] for i in range(57, 73)]# extract difference between current state and next state
+        diff = [ns[i]-s[i] for i in range(57-18, 73-18)]# extract difference between current state and next state
         if diff[0] != 0:
             self.action.append(diff[0])
         else:
@@ -485,12 +485,7 @@ class catanAIGame():
                     player_i.resources[resourceGenerated] += 1
                     if self.ifprint:
                         print("{} collects 1 {} from Settlement".format(player_i.name, resourceGenerated))
-                
-        print(self.q["1"]["s1"][57:73])
-        print(self.q["1"]["a1"])
-        print(self.q["1"]["s2"][57:73])
-        print(self.q["1"]["a2"])
-        print(self.q["1"]["s3"][57:73])
+
         
 
         if self.ifprint:
@@ -545,7 +540,6 @@ class catanAIGame():
                 print("AI using heuristic robber...")
             currentPlayer.heuristic_move_robber(self.board)
 
-
     #function to check if a player has the longest road - after building latest road
     def check_longest_road(self, player_i):
         if(player_i.maxRoadLength >= 5): #Only eligible if road length is at least 5
@@ -597,6 +591,10 @@ class catanAIGame():
         #self.board.displayBoard() #Display updated board
         numTurns = 0
         while (self.gameOver == False):
+            if numTurns > 500:
+                self.gameOver == True
+                print("gameover triggered")
+                self.triggered == True
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
                 # self.tostate(currPlayer.name)
@@ -644,6 +642,8 @@ class catanAIGame():
                     
                     #Check if game is over
                     if currPlayer.victoryPoints >= self.maxPoints:
+                        for player in list(self.playerQueue.queue):
+                            self.q[player.name]['r'] = player.victoryPoints-self.maxPoints
                         self.gameOver = True
                         self.turnOver = True
                         if self.ifprint:
@@ -665,7 +665,20 @@ class catanAIGame():
                     #     runTime = pygame.time.get_ticks() - startTime
 
                     break
-                                   
+
+
+def strnice(input):
+    result = ""
+    for i in input:
+        result += str(i)+" "
+    return result
+
 if __name__=="__main__":
-    #Initialize new game and run
-    newGame_AI = catanAIGame()
+    iterations = 180
+    f1 = open("data.txt", "a")
+    for i in range(0,iterations):
+        newGame_AI = catanAIGame()
+        playerList = list(newGame_AI.playerQueue.queue)
+        for player in playerList:
+            f1.write(strnice(newGame_AI.q[player.name]["s1"]+newGame_AI.q[player.name]["a1"]+newGame_AI.q[player.name]["s2"]+newGame_AI.q[player.name]["a2"]+newGame_AI.q[player.name]["s3"])+str(newGame_AI.q[player.name]["r"])+'\n')
+        print(i)

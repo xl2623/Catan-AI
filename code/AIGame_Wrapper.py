@@ -205,7 +205,7 @@ def simulate(game, model, exploration_policy, k):
 
         wins = wins + 1 if rp == 1 else wins
 
-        if i % 1000 == 0:
+        if i % 100 == 0:
             print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
             print('Wins: ' + str(wins))
             print('Change in theta: ' + str(np.linalg.norm(init_theta - model.theta)))
@@ -236,7 +236,7 @@ def main():
     Pi = EpsilonGreedyExploration(epsilon)
 
     # Simulation
-    k = 10000      # number of games to simulate
+    k = 1000      # number of games to simulate
     simulate(game, model, Pi, k)
 
 if __name__ == "__main__":

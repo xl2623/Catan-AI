@@ -13,7 +13,7 @@ class GradientQLearning():
         self.alpha = alpha
 
     def lookahead(self, s, a):
-        return self.Q(s,a)
+        return self.Q(self.theta,s,a)
 
     def update(self, s, a, r, sp, usable_actions=None, ignore_expected_util=False):
         if ignore_expected_util:

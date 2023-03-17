@@ -116,6 +116,9 @@ class AIGame():
                         self.increment_player_order()
                         pygame.event.pump()
         
+            # Resource allocation for players
+            self.catan_game.allocate_initial_resources(self.player_list)
+
             # Run thru the game
             # TODO: Use victory points as reward
             winner, _ = self.catan_game.playCatan()
@@ -126,7 +129,7 @@ class AIGame():
     
     def translate_action_to_sim(self, action):
         # TODO: need to map this to the appropiate settlement vertex
-        return self.full_action_space[action]
+        return self.catan_game.board.vertex_index_to_pixel_dict[action]
     
     def reset(self):
         self.player_order = 1
@@ -140,13 +143,13 @@ class AIGame():
 
 def compute_Q_NN(theta, s, a):
     # TODO: This may need to change for Catan
-    input = np.array(s.append(a))
+    input = np.array(s + [a])
 
     return predict(theta, input)
 
 def compute_gradQ_NN(theta, s, a):
     # TODO: This may need to change for Catan
-    input = np.array(s.append(a))
+    input = np.array(s + [a])
 
     return grad_predict(theta, input)
 
@@ -165,7 +168,7 @@ def predict(weights, input):
 
 def grad_predict(weights, input):
     dot_prod = np.dot(input, weights)
-    return input * np.exp(dot_prod) / np.power(dot_prod + 1, 2)
+    return input * np.exp(dot_prod) / np.power(np.exp(dot_prod) + 1, 2)
 
 
 """
@@ -178,31 +181,43 @@ def random_placement_policy(board, possibleVertices):
     return vertexToBuild
 
 def simulate(game, model, exploration_policy, k):
-    for i in range(0,k):
+    rp = -1
+    k = 0
+    init_theta = model.theta
+    print(model.theta)
+    # for i in range(0,k):
+    while(rp == -1):
         # Get initial board state
         s = game.start()
         
         # 1st placement
         usable_actions = game.get_usable_action_space()
         a = exploration_policy.action(model, s, usable_actions)
-        sp, r  = game.play(s, a)
+        sp, r  = game.play(a)
         usable_actions = game.get_usable_action_space()
         model.update(s, a, r, s, usable_actions)
         
         # 2nd placement
         ap = exploration_policy.action(model, sp, usable_actions)
-        spp, rp = game.play(sp, ap)
+        spp, rp = game.play(ap)
         model.update(sp, ap, rp, spp, ignore_expected_util=True)
+
+        print(rp)
+        k += 1
                 
         # Reset Catan game
         game.reset()
+    
+    print(model.theta)
+    print(init_theta - model.theta)
+    print(k)
 
 def main():
     # Game class
     game = AIGame()
 
     # TODO: Add roads
-    state_space_size = 76
+    state_space_size = 73
     action_space_full_size = 54
      
     # Gradient Q-Learning model
@@ -210,7 +225,7 @@ def main():
     gamma = 0.95
     Q = compute_Q_NN
     gradQ = compute_gradQ_NN
-    theta0 = np.random.rand(state_space_size + action_space_full_size,)
+    theta0 = np.random.rand(state_space_size + 1,)
     alpha = 0.2
 
     model = GradientQLearning(A, gamma, Q, gradQ, theta0, alpha)

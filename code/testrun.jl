@@ -78,7 +78,7 @@ function myRead(filename)
     return D, df;
 end
 
-D, df= myRead("/Users/thomasliu/Catan-AI-1/code/data_medium.csv");
+D, df= myRead("./data_medium.csv");
 global S1 = D[:, 1:55]
 global A1 = D[:, 56:57]
 global R1 = [i*0 for i in range(1, size(D, 1))]

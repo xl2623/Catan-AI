@@ -150,6 +150,7 @@ end
 
 function main()
     # Basis function
+    # TODO: Update to use the pre-computed model
     basis = Chain(
         Dense(56, 32, Flux.relu), # TODO: Update once we add roads (from 56 to 57)
         Dense(32, 16, Flux.relu),
@@ -161,6 +162,7 @@ function main()
     # exit()
 
     # Gradient Q-Learning
+    # TODO: uopdate action space
     # A = [[i, j] for j = 1:72 for i=1:54]
     A = 1:54
     gamma = 0.99

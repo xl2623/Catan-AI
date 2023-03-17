@@ -129,6 +129,7 @@ class AIGame():
             return self.get_state(), vic_points-10   
     
     def translate_action_to_sim(self, action):
+        # TODO: maybe update to take care of road actions?
         return self.catan_game.board.vertex_index_to_pixel_dict[action]
     
     def reset(self):

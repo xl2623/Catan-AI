@@ -10,4 +10,4 @@ class EpsilonGreedyExploration():
             # TODO: Make this selection in here instead of going outside of this
             return model.random_action(s)
         
-        return model.A[np.argmax(np.array([model.Q(s,a) if a in usable_actions else -np.inf for a in model.A]))[0]]
+        return model.A[np.argmax(np.array([model.Q(model.theta,s,a) if a in usable_actions else -np.inf for a in model.A]))[0]]

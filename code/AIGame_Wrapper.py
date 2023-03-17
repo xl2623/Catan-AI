@@ -9,47 +9,6 @@ from exploration import EpsilonGreedyExploration
     Catan Game Wrappers
 """
 
-def play_game(placement_policy):
-    # Create game object
-    special_player_name = 0
-    catan_game = catanAIGame(ifprint=False, ifGUI=False, specialPlayerName=special_player_name, selfstart=False)
-
-    # 1st placement
-    player_list = catan_game.create_player_list(special_placement_type="learning")
-    random.shuffle(player_list)
-
-    player_order = 1
-    for player_i in player_list:
-        # Establish playing order
-        player_i.placementOrder = player_order
-        player_order += 1
-
-        # Place settlement
-        if player_i.name == special_player_name:
-            player_i.initial_setup(catan_game.board, placement_policy)
-        else:
-            player_i.initial_setup(catan_game.board)
-        pygame.event.pump()
-    
-    # 2nd placement
-    player_list.reverse()
-
-    for player_i in player_list:
-        # Place settlement
-        if player_i.name == special_player_name:
-            player_i.initial_setup(catan_game.board, placement_policy)
-        else:
-            player_i.initial_setup(catan_game.board)
-        pygame.event.pump()
-        
-    # Resource allocation for players
-    catan_game.allocate_initial_resources(player_list)
-
-    # Play the game
-    winner, turns = catan_game.playCatan()
-
-    return winner, turns
-
 class AIGame():
     def __init__(self):
         # Create game object
@@ -62,7 +21,7 @@ class AIGame():
         self.reset()
     
     def start(self):
-        # Randomize player order        
+        # TODO: Randomize player order        
         self.player_list = self.catan_game.create_player_list(special_placement_type="learning")
         random.shuffle(self.player_list)
         
@@ -75,7 +34,7 @@ class AIGame():
             self.player_name_list.append(player_i.name)
             
             player_order += 1
-            
+
         # Play until we reach the agent
         self.player_order = 1
         for player_i in self.player_list:
@@ -84,6 +43,7 @@ class AIGame():
                 break
             else:
                 player_i.initial_setup(self.catan_game.board)
+                pygame.event.pump()
                 self.increment_player_order()
                 
         # Return game state
@@ -97,16 +57,26 @@ class AIGame():
     
     def get_state(self):
         return self.catan_game.tostate_simple(self.special_player_name, self.player_name_list) 
-     
-    def get_usable_action_space(self):
-        # TODO: also get road actionable space
+    
+    def get_current_action_space(self):
         return self.catan_game.board.get_setup_settlements(None)
+
+    def get_usable_action_space(self):
+        # Settlement action space
+        usable_action_space = self.get_current_action_space()
+
+        # Assumes actions are in a range
+        full_usable_action_space = [idx for idx, action in enumerate(self.full_action_space) if action in usable_action_space]
+
+        # TODO: also get road actionable space
+        return full_usable_action_space
     
     def play(self, action):
         action = self.translate_action_to_sim(action)
         
         # Find player & play the player action
         self.player_list[self.special_player_order-1].initial_setup(self.catan_game.board, action)
+        pygame.event.pump()
 
         # Round 1: 1st placement
         if self.round == 1:
@@ -115,12 +85,10 @@ class AIGame():
             # Still some initial placements to be done
             if self.player_order != 1:
                 for idx, player_i in enumerate(self.player_list):
-                    if player_i.name == self.special_player_name:
-                        self.increment_player_order()
-                        break
-                    elif idx + 1 >= self.player_order:
+                    if idx + 1 >= self.player_order:
                         player_i.initial_setup(self.catan_game.board)
                         self.increment_player_order()
+                        pygame.event.pump()
             
             # Do the next set of placements
             self.player_list.reverse()
@@ -133,6 +101,7 @@ class AIGame():
                 else:
                     player_i.initial_setup(self.catan_game.board)
                     self.increment_player_order()
+                    pygame.event.pump()
             
             # Return 0 reward and the state
             return self.get_state(), 0.0
@@ -142,14 +111,13 @@ class AIGame():
             # Still some second placements to be done
             if self.player_order != 1:
                 for idx, player_i in enumerate(self.player_list):
-                    if player_i.name == self.special_player_name:
-                        self.increment_player_order()
-                        break
-                    elif idx + 1 >= self.player_order:
+                    if idx + 1 >= self.player_order:
                         player_i.initial_setup(self.catan_game.board)
                         self.increment_player_order()
+                        pygame.event.pump()
         
             # Run thru the game
+            # TODO: Use victory points as reward
             winner, _ = self.catan_game.playCatan()
             
             reward = 1 if winner == self.special_player_name else -1
@@ -158,34 +126,13 @@ class AIGame():
     
     def translate_action_to_sim(self, action):
         # TODO: need to map this to the appropiate settlement vertex
-        return action
+        return self.full_action_space[action]
     
     def reset(self):
         self.player_order = 1
         self.round = 1
         self.catan_game = catanAIGame(ifprint=False, ifGUI=False, specialPlayerName=self.special_player_name, selfstart=False)
-        print(self.get_usable_action_space())
-
-def simulate(game, model, exploration_policy, k):
-    for i in range(0,k):
-        # Get initial board state
-        s = game.start()
-        
-        # 1st placement
-        # TODO: Get allowable action space
-        usable_actions = game.get_usable_action_space()
-        a = exploration_policy.action(model, s, usable_actions)
-        sp, r  = game.play(s, a)
-        usable_actions = game.get_usable_action_space()
-        model.update(s, a, r, s, usable_actions)
-        
-        # 2nd placement
-        ap = exploration_policy.action(model, sp, usable_actions)
-        spp, rp = game.play(sp, ap)
-        model.update(sp, ap, rp, spp, ignore_expected_util=True)
-                
-        # Reset Catan game
-        game.reset()
+        self.full_action_space = self.get_current_action_space()
 
 """
     Gradient Q Learning functions
@@ -193,13 +140,13 @@ def simulate(game, model, exploration_policy, k):
 
 def compute_Q_NN(theta, s, a):
     # TODO: This may need to change for Catan
-    input = np.array([s,a])
+    input = np.array(s.append(a))
 
     return predict(theta, input)
 
 def compute_gradQ_NN(theta, s, a):
     # TODO: This may need to change for Catan
-    input = np.array([s,a])
+    input = np.array(s.append(a))
 
     return grad_predict(theta, input)
 
@@ -230,14 +177,34 @@ def random_placement_policy(board, possibleVertices):
 
     return vertexToBuild
 
+def simulate(game, model, exploration_policy, k):
+    for i in range(0,k):
+        # Get initial board state
+        s = game.start()
+        
+        # 1st placement
+        usable_actions = game.get_usable_action_space()
+        a = exploration_policy.action(model, s, usable_actions)
+        sp, r  = game.play(s, a)
+        usable_actions = game.get_usable_action_space()
+        model.update(s, a, r, s, usable_actions)
+        
+        # 2nd placement
+        ap = exploration_policy.action(model, sp, usable_actions)
+        spp, rp = game.play(sp, ap)
+        model.update(sp, ap, rp, spp, ignore_expected_util=True)
+                
+        # Reset Catan game
+        game.reset()
+
 def main():
     # Game class
     game = AIGame()
-    
+
     # TODO: Add roads
     state_space_size = 76
     action_space_full_size = 54
-    
+     
     # Gradient Q-Learning model
     A = np.arange(0,action_space_full_size,1,dtype=int)
     gamma = 0.95

@@ -25,4 +25,4 @@ class GradientQLearning():
         grad = (r + self.gamma*u - self.Q(self.theta,s,a))*self.gradQ(self.theta, s, a)
         self.theta += self.alpha*scale_gradient(grad, 1)
 
-        self.theta = scale_gradient(self.theta, 1)
+        self.theta = scale_gradient(self.theta, 10)

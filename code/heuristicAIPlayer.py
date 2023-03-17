@@ -162,6 +162,8 @@ class heuristicAIPlayer(player):
         '''
         #Get list of robber spots
         robberHexDict = board.get_robber_spots()
+
+        hexToRob_index = random.choice([key for key in robberHexDict])
         
         #Choose a hexTile with maximum adversary settlements
         maxHexScore = 0 #Keep only the best hex to rob

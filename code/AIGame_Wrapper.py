@@ -4,6 +4,7 @@ from heuristicAIPlayer import *
 import pygame
 from QLearning import GradientQLearning
 from exploration import EpsilonGreedyExploration
+from tqdm import tqdm
 
 """
     Catan Game Wrappers
@@ -120,12 +121,15 @@ class AIGame():
             self.catan_game.allocate_initial_resources(self.player_list)
 
             # Run thru the game
-            # TODO: Use victory points as reward
-            winner, _ = self.catan_game.playCatan()
+            try:
+                vic_points = self.catan_game.playCatan()
+            except:
+                # Sometimes the sim crashes
+                # Hard to debug since it's literally 1/10,000 times.
+                # Just ignore those sims...
+                vic_points = -1
             
-            reward = 1 if winner == self.special_player_name else -1
-            
-            return self.get_state(), reward   
+            return self.get_state(), vic_points   
     
     def translate_action_to_sim(self, action):
         # TODO: need to map this to the appropiate settlement vertex
@@ -181,10 +185,12 @@ def random_placement_policy(board, possibleVertices):
     return vertexToBuild
 
 def simulate(game, model, exploration_policy, k):
-    init_theta = model.theta
+    init_theta0 = model.theta
+    init_theta = init_theta0
     wins  = 0
 
-    for i in range(0,k):
+    for i in tqdm(range(0,k+1)):
+        # print(i)
         # Get initial board state
         s = game.start()
         
@@ -198,27 +204,38 @@ def simulate(game, model, exploration_policy, k):
         # 2nd placement
         ap = exploration_policy.action(model, sp, usable_actions)
         spp, rp = game.play(ap)
-        model.update(sp, ap, rp, spp, ignore_expected_util=True)
+        if rp >= 0:
+            model.update(sp, ap, rp, spp, ignore_expected_util=True)
                 
         # Reset Catan game
         game.reset()
 
-        wins = wins + 1 if rp == 1 else wins
+        wins = wins + 1 if rp == 10 else wins
+        # print()
 
-        if i % 100 == 0:
+        if i % 10000 == 0:
             print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
             print('Wins: ' + str(wins))
             print('Change in theta: ' + str(np.linalg.norm(init_theta - model.theta)))
+            print('Exploration rate: ' + str(exploration_policy.epsilon))
             wins = 0
             init_theta = model.theta
+            exploration_policy.decay_epsilon()
             print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+    
+    print(init_theta0)
+    print(model.theta)
+    print(np.linalg.norm(init_theta0 - model.theta))
+    print(np.linalg.norm(init_theta0))
+    print(np.linalg.norm(model.theta))
+
 
 def main():
     # Game class
     game = AIGame()
 
     # TODO: Add roads
-    state_space_size = 73
+    state_space_size = 55
     action_space_full_size = 54
      
     # Gradient Q-Learning model
@@ -231,12 +248,13 @@ def main():
 
     model = GradientQLearning(A, gamma, Q, gradQ, theta0, alpha)
 
-    # Exploration-Exploipation model
-    epsilon = 0.5
-    Pi = EpsilonGreedyExploration(epsilon)
+    # Exploration-Exploitation model
+    epsilon = 1.0
+    decay_rate = 0.9
+    Pi = EpsilonGreedyExploration(epsilon, decay_rate)
 
     # Simulation
-    k = 1000      # number of games to simulate
+    k = 100000      # number of games to simulate
     simulate(game, model, Pi, k)
 
 if __name__ == "__main__":

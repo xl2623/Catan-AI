@@ -41,7 +41,7 @@ global basis = Chain(
     Dense(32, 16, Flux.relu),
     Dense(16, 1),
 )
-# @load "test1.bson" basis
+# @load "alpha_5e-4_gamma_99e-2_epoch_15.bson" basis
 function Q(theta,s,a)
     params(basis) = theta
     input = vcat(s, a)
@@ -76,8 +76,9 @@ function train(dataFile, saveFile)
     A2 = D[:, 113:114]
     R2 = D[:, 170]
     S3 = D[:, 115:169]
+    print(A2)
 
-    for m in range(1, 10)
+    for m in range(1, 25)
         print(theta[1][1])
         print("\n")
         for i in range(1, size(D, 1))
@@ -88,7 +89,6 @@ function train(dataFile, saveFile)
             a2 = A2[i, :];
             r2 = R2[i];
             s3= S3[i, :];
-
             update!(myModel, s1, a1, r1, s2, false);
             update!(myModel, s2, a2, r2, s3, true);
 
@@ -101,8 +101,8 @@ function train(dataFile, saveFile)
         print(theta[1][1])
         print("\n")
     end
-    @save saveFile basis
+    # @save saveFile basis
 end
 
-train("/home/thomas_ubuntu/Catan-AI-1/code/data/data.csv", "alpha_5e-4_gamma_99e-2_epoch_10.bson")
+train("/home/thomas_ubuntu/Catan-AI-1/code/data/data_small.csv", "alpha_5e-4_gamma_99e-2_epoch_40.bson")
 

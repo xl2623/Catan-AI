@@ -1,9 +1,15 @@
 using PyCall
 using Flux
+<<<<<<< HEAD
+=======
+using BSON: @load
+using LinearAlgebra
+>>>>>>> fc5e358e772aae6db7c05b7ae63b5cee5061011a
 
 """
     Catan Game Wrappers
 """
+<<<<<<< HEAD
 # pushfirst!(pyimport("sys")."path", "/home/polfr/Documents/Stanford/stanford/AA228/Catan-AI/code")
 
 # py"""
@@ -16,6 +22,29 @@ using Flux
 
 # py"setup"()
 # function_name = pyimport("AIGame_Wrapper")["play_game_with_policy"]
+=======
+
+pushfirst!(pyimport("sys")."path", "")
+
+play_game_with_policy = pyimport("AIGame_Wrapper")["play_game_with_policy"]
+
+function play_game(policy)
+    s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game_with_policy(policy)
+
+    # Convert to Julia style vectors
+    s = convert_array_2_julia(s, Int64)
+    usable_a = convert_array_2_julia(usable_a, Int64)
+    sp = convert_array_2_julia(sp, Int64)
+    usable_ap = convert_array_2_julia(usable_ap, Int64)
+    spp = convert_array_2_julia(spp, Int64)
+
+    return s, usable_a, a, r, sp, usable_ap, ap, rp, spp
+end
+
+function convert_array_2_julia(arr, convert_to)
+    return map(x -> convert(convert_to, x), arr)
+end
+>>>>>>> fc5e358e772aae6db7c05b7ae63b5cee5061011a
 
 """
     Gradient Q Learning
@@ -86,6 +115,7 @@ end
     Epsilon-Greedy Exploration
 """
 
+<<<<<<< HEAD
 mutable struct EpsilonGreedyExploration
     epsilon # probability of random arm
 end
@@ -96,6 +126,16 @@ function (policy::EpsilonGreedyExploration)(model, s, usable_actions)
     if rand() < epsilon
         return rand(usable_actions)
     end
+=======
+function epsilonGreedyExploration(model, epsilon, s, usable_actions)
+    # TODO: There may be an issue with the indeces being 0-based in Python
+    s = convert_array_2_julia(s, Int64)
+
+    if rand() < epsilon
+        return rand(usable_actions)
+    end
+
+>>>>>>> fc5e358e772aae6db7c05b7ae63b5cee5061011a
     Q(s,a) = lookahead(model, s, a)
     return argmax(a->Q(s,a), usable_actions)
 end
@@ -104,6 +144,7 @@ end
     Main function
 """
 
+<<<<<<< HEAD
 function main()
     # TODO: Load in the params for theta
 
@@ -115,6 +156,58 @@ function main()
     )
 
     # Gradient Q-Learning
+=======
+function improve_theta(model, policy_fcn, epsilon, k, print_freq)
+    wins = 0
+    total_reward = 0
+
+    for i in 1:k
+        # Policy
+        current_policy(s, usable_actions) = policy_fcn(model, epsilon, s, usable_actions)
+        
+        # Play one game
+        s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game(current_policy)
+
+        # Update theta
+        model = update!(model, s, a, r, sp, usable_a, false)
+        model = update!(model, sp, ap, rp, spp, usable_ap, true)
+
+        # Record results
+        wins = rp == 0 ? wins + 1 : wins 
+        total_reward += rp
+
+        if i % print_freq == 0
+            avg_reward = total_reward / print_freq
+
+            println("##################################################")
+            println("Number of iterations: $i")
+            println("Number of wins: $wins")
+            println("Total reward: $total_reward")
+            println("Average reward: $avg_reward")
+            println("##################################################")
+
+            wins = 0
+            total_reward = 0
+        end
+    end
+end
+
+function main()
+    # Basis function
+    # TODO: Update to use the pre-computed model
+    basis = Chain(
+        Dense(56, 32, Flux.relu), # TODO: Update once we add roads (from 56 to 57)
+        Dense(32, 16, Flux.relu),
+        Dense(16, 1),
+    )
+    # OR
+    # @load "test.bson" basis
+    # println(basis)
+    # exit()
+
+    # Gradient Q-Learning
+    # TODO: uopdate action space
+>>>>>>> fc5e358e772aae6db7c05b7ae63b5cee5061011a
     # A = [[i, j] for j = 1:72 for i=1:54]
     A = 1:54
     gamma = 0.99
@@ -127,10 +220,17 @@ function main()
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
     # Play games
+<<<<<<< HEAD
     current_policy(s, usable_actions) = exploration_policy(qlearning, s, usable_actions)
     vals = py"play_game"(current_policy)
 
     print(vals)
+=======
+    k = 10000
+    print_frequency = 1000
+    epsilon = 0.1
+    improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency)
+>>>>>>> fc5e358e772aae6db7c05b7ae63b5cee5061011a
 end
 
 main()

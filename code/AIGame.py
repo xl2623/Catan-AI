@@ -429,7 +429,7 @@ class catanAIGame():
 
     #Function to initialize players + build initial settlements for players
     def build_initial_settlements(self):
-        playerList = self.create_player_list("learning")
+        playerList = self.create_player_list("heuristic")
         # choose from heuristic, random, learning
 
         #Build Settlements and roads of each player forwards
@@ -443,7 +443,7 @@ class catanAIGame():
             # print(self.state[57:73])
             player_i.placementOrder = order
             order += 1
-            player_i.initial_setup(self.board, state=s)
+            player_i.initial_setup(self.board)
             pygame.event.pump()
             if self.ifGUI:
                 self.boardView.displayGameScreen()
@@ -465,7 +465,7 @@ class catanAIGame():
             s = self.tostate_simple(player_i.name, playerNameList)
             # print(self.state[0])
             # print(self.state[57:73])
-            player_i.initial_setup(self.board, state=s)
+            player_i.initial_setup(self.board)
             pygame.event.pump()
             if self.ifGUI:
                 self.boardView.displayGameScreen()
@@ -600,8 +600,8 @@ class catanAIGame():
         while (self.gameOver == False):
             if numTurns > 500:
                 self.gameOver == True
-                print("gameover triggered")
-                self.triggered == True
+                # print("gameover triggered")
+                # self.triggered == True
             #Loop for each player's turn -> iterate through the player queue
             for currPlayer in self.playerQueue.queue:
                 # self.tostate(currPlayer.name)
@@ -650,6 +650,7 @@ class catanAIGame():
                     #Check if game is over
                     if currPlayer.victoryPoints >= self.maxPoints:
                         for player in list(self.playerQueue.queue):
+                            continue
                             self.q[player.name]['r'] = player.victoryPoints-self.maxPoints
                         self.gameOver = True
                         self.turnOver = True
@@ -663,9 +664,9 @@ class catanAIGame():
                             print("====================================================")
                             print("PLAYER {} WINS IN {} TURNS!".format(currPlayer.name, int(numTurns/4)))
 
-                            return currPlayer.name, int(numTurns/4)
-                            # special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
-                            # return special_player.victoryPoints
+                            # return currPlayer.name, int(numTurns/4)
+                            special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                            return special_player.victoryPoints
                         break
 
                 if(self.gameOver):
@@ -674,10 +675,10 @@ class catanAIGame():
                     # while(runTime < 5000): #5 second delay prior to quitting
                     #     runTime = pygame.time.get_ticks() - startTime
 
-                    # special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
+                    special_player = [player for player in self.playerQueue.queue if player.name == self.specialPlayerName][0]
                     
-                    # return special_player.victoryPoints
-                    break
+                    return special_player.victoryPoints
+                    # break
 
 def strnice(input):
     result = ""

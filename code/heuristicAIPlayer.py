@@ -28,13 +28,13 @@ class heuristicAIPlayer(player):
     '''
     Set of initial placement functions
     '''
-    def initial_setup(self, board, action=None, state=None):
+    def initial_setup(self, board, action=None):
         if self.init_placement_type == 'heuristic':
             self.initial_heuristic_setup(board)
         elif self.init_placement_type == 'random':
             self.initial_random_setup(board)
         elif self.init_placement_type == 'learning':
-            self.initial_learning_setup(board, action, state)
+            self.initial_learning_setup(board, action)
         else:
             raise NameError("HeuristicPlayer: initial setup type is not recognized")
 
@@ -98,11 +98,16 @@ class heuristicAIPlayer(player):
         # Build random road
         self.build_rand_road(board)
     
-    def initial_learning_setup(self, board, action, state):
-        # goal is to extra possible action based on current state
-        possibleVertices = board.get_setup_settlements(self)
-        pixel_to_vertex_index_dict = dict((v, k) for k, v in board.vertex_index_to_pixel_dict.items())
-        possibleVertices_index = [pixel_to_vertex_index_dict[key] for key in pixel_to_vertex_index_dict if key in possibleVertices]
+    def initial_learning_setup(self, board, action):
+        # unpack action
+        a1 = action[0] # this is action for vertex
+        a2 = action[1] # this is action for edge
+
+        # select and build vertex from action
+        vertexToBuild = board.vertex_index_to_pixel_dict[a1]
+        self.build_settlement_at_vertex(vertexToBuild, board)
+
+        # select and build edge from action
         edgeBank = [(Point(x=580.0, y=400.0), Point(x=540.0, y=330.72)), (Point(x=580.0, y=400.0), Point(x=540.0, y=469.28)), 
                     (Point(x=580.0, y=400.0), Point(x=660.0, y=400.0)), (Point(x=540.0, y=330.72), Point(x=460.0, y=330.72)), 
                     (Point(x=540.0, y=330.72), Point(x=580.0, y=261.44)), (Point(x=460.0, y=330.72), Point(x=420.0, y=400.0)), 
@@ -139,53 +144,8 @@ class heuristicAIPlayer(player):
                     (Point(x=180.0, y=538.56), Point(x=220.0, y=607.85)), (Point(x=220.0, y=330.72), Point(x=180.0, y=400.0)), 
                     (Point(x=220.0, y=330.72), Point(x=180.0, y=261.44)), (Point(x=300.0, y=192.15), Point(x=220.0, y=192.15)), 
                     (Point(x=300.0, y=192.15), Point(x=340.0, y=122.87)), (Point(x=220.0, y=192.15), Point(x=180.0, y=261.44))]
-                    # start from the 0 index of state
-                
-        possibleRoads = []
-        for j in range(0,len(possibleVertices_index)):
-            currVertex = board.boardGraph[[board.vertex_index_to_pixel_dict[vertex_index] for vertex_index in possibleVertices_index][j]]
-            v_neighbor = currVertex.edgeList
-            my_pixelcoor = currVertex.pixelCoordinates
-            listofroads = [(my_pixelcoor, one_of_the_neighbor) for one_of_the_neighbor in v_neighbor]
-            curr_possible_road_index = []
-            for i in range(0, len(listofroads)):
-                try:
-                    curr_possible_road_index.append(edgeBank.index((listofroads[i][0], listofroads[i][1])))
-                except:
-                    curr_possible_road_index.append(edgeBank.index((listofroads[i][1], listofroads[i][0])))
-            
-            possibleRoads.append(curr_possible_road_index)
-
-        #print(possibleRoads)
-        #print(possibleVertices_index)
-        # assemble action space
-        A = []
-        for i in range(1, len(possibleVertices_index)):
-            for road in possibleRoads[i]:
-                curr_action = []
-                curr_action.append(possibleVertices_index[i])
-                curr_action.append(road)
-                A.append(curr_action)
-        
-        # possible action space is A
-        # current state is state
-        # print(A)
-        # print(state)
-
-        SApair = []
-        for element in A:
-            currSA = state+element
-            SApair.append(currSA)
-
-        # # Build settlement
-        # vertexToBuild = action
-        # self.build_settlement_at_vertex(vertexToBuild, board)
-
-        # # Build random road
-        # self.build_rand_road(board)
-
-    '''
-    '''
+        roadToBuild = edgeBank[a2]
+        self.build_road(roadToBuild[0],roadToBuild[1], board)
     
     def move(self, board):
         if self.ifprint:

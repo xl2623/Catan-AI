@@ -14,9 +14,9 @@ import numpy as np
 """
 
 class AIGame():
-    def __init__(self):
+    def __init__(self, specialPlayerName='1'):
         # Create game object
-        self.special_player_name = '1'
+        self.special_player_name = specialPlayerName
         self.round = 1
         self.player_order = 1
         self.special_player_order = -1

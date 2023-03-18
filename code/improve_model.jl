@@ -68,10 +68,10 @@ function update!(model::GradientQLearning, s, a, r, sp, usable_actions, ignore_e
     elseif isempty(usable_actions)
         u = maximum(Q(theta,sp,ap) for ap in A)
     else
-        expected_utility(theta, sp, ap) = ap in usable_actions ? Q(theta,sp,ap) : -Inf
+        expected_utility(theta, sp, ap) = vec(ap) in eachrow(usable_actions) ? Q(theta,sp,ap) : -Inf
         u = maximum(expected_utility(theta, sp, ap) for ap in A)
     end
-    
+  
     for i in range(1,6)
         gradient = (r + gamma*u - Q(theta, s, a)) .* myGrad[theta[i]]
         theta[i] .+= alpha*scale_gradient(gradient, 1)
@@ -84,22 +84,7 @@ end
 """
 
 function Q_func(basis, theta, s, a)
-    # test = deepcopy(Flux.params(basis))
     params(basis) = theta
-
-    # for (i, val) in enumerate(Flux.params(basis))
-    #     val = theta[i]
-    # end
-
-    # delta_theta = ones(6,1)
-    # for i in 1:6
-    #     delta_theta[i] = norm(Flux.params(basis)[i] - test[i])
-    # end
-    # tot_change = norm(delta_theta)
-
-    # println("Change in theta: $delta_theta")
-    # println("Total change in theta: $tot_change")
-
     input = vcat(s, a)
     return sum(basis(input))
 end
@@ -113,7 +98,6 @@ end
 """
 
 function epsilonGreedyExploration(model, epsilon, s, usable_actions)
-    # TODO: There may be an issue with the indeces being 0-based in Python
     s = convert_array_2_julia(s, Int64)
 
     if rand() < epsilon
@@ -121,7 +105,18 @@ function epsilonGreedyExploration(model, epsilon, s, usable_actions)
     end
 
     Q(s,a) = lookahead(model, s, a)
-    return argmax(a->Q(s,a), usable_actions)
+    max_q = -Inf 
+    max_action = []
+
+    for action in eachrow(usable_actions)
+        q = Q(s,action)
+        if q > max_q
+            max_q = q 
+            max_action = action
+        end
+    end
+
+    return max_action
 end
 
 """
@@ -141,12 +136,14 @@ function improve_theta(model, policy_fcn, epsilon, k, print_freq)
         s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game(current_policy)
 
         # Update theta
-        model = update!(model, s, a, r, sp, usable_a, false)
-        model = update!(model, sp, ap, rp, spp, usable_ap, true)
-        
-        # Record results
-        wins = rp == 0 ? wins + 1 : wins 
-        total_reward += rp
+        if rp > -11
+            model = update!(model, s, a, r, sp, usable_a, false)
+            model = update!(model, sp, ap, rp, spp, usable_ap, true)
+            
+            # Record results
+            wins = rp >= 0 ? wins + 1 : wins 
+            total_reward += rp
+        end
 
         if i % print_freq == 0
             avg_reward = total_reward / print_freq
@@ -175,7 +172,7 @@ function main()
     # Basis function
     # TODO: Update to use the pre-computed model
     basis = Chain(
-        Dense(56, 32, Flux.relu), # TODO: Update once we add roads (from 56 to 57)
+        Dense(57, 32, Flux.relu), # TODO: Update once we add roads (from 56 to 57)
         Dense(32, 16, Flux.relu),
         Dense(16, 1),
     )
@@ -185,9 +182,8 @@ function main()
     # exit()
 
     # Gradient Q-Learning
-    # TODO: uopdate action space
-    # A = [[i, j] for j = 1:72 for i=1:54]
-    A = 1:54
+    A = [[i, j] for j = 0:71 for i=0:53]
+    # A = 1:54
     gamma = 0.99
     theta = Flux.params(basis)
     alpha = 0.001
@@ -198,11 +194,9 @@ function main()
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
     # Play games
-    k = 10000
-    print_frequency = 1000
-    k = 1000
-    print_frequency = 100
-    epsilon = 0.1
+    k = 1
+    print_frequency = 1
+    epsilon = 0.0
     improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency)
 end
 

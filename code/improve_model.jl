@@ -84,7 +84,22 @@ end
 """
 
 function Q_func(basis, theta, s, a)
-    # params(basis) = theta
+    # test = deepcopy(Flux.params(basis))
+    params(basis) = theta
+
+    # for (i, val) in enumerate(Flux.params(basis))
+    #     val = theta[i]
+    # end
+
+    # delta_theta = ones(6,1)
+    # for i in 1:6
+    #     delta_theta[i] = norm(Flux.params(basis)[i] - test[i])
+    # end
+    # tot_change = norm(delta_theta)
+
+    # println("Change in theta: $delta_theta")
+    # println("Total change in theta: $tot_change")
+
     input = vcat(s, a)
     return sum(basis(input))
 end
@@ -116,6 +131,7 @@ end
 function improve_theta(model, policy_fcn, epsilon, k, print_freq)
     wins = 0
     total_reward = 0
+    initial_theta = deepcopy(model.theta)
 
     for i in 1:k
         # Policy
@@ -127,19 +143,26 @@ function improve_theta(model, policy_fcn, epsilon, k, print_freq)
         # Update theta
         model = update!(model, s, a, r, sp, usable_a, false)
         model = update!(model, sp, ap, rp, spp, usable_ap, true)
-
+        
         # Record results
         wins = rp == 0 ? wins + 1 : wins 
         total_reward += rp
 
         if i % print_freq == 0
             avg_reward = total_reward / print_freq
+            delta_theta = ones(6,1)
+            for i in 1:6
+                delta_theta[i] = norm(model.theta[i] - initial_theta[i])
+            end
+            tot_change = norm(delta_theta)
 
             println("##################################################")
             println("Number of iterations: $i")
             println("Number of wins: $wins")
             println("Total reward: $total_reward")
             println("Average reward: $avg_reward")
+            println("Change in theta: $delta_theta")
+            println("Total change in theta: $tot_change")
             println("##################################################")
 
             wins = 0
@@ -175,8 +198,8 @@ function main()
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
     # Play games
-    k = 10000
-    print_frequency = 1000
+    k = 1000
+    print_frequency = 100
     epsilon = 0.1
     improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency)
 end

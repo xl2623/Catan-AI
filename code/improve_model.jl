@@ -128,7 +128,7 @@ end
     Main function
 """
 
-function improve_theta(model, policy_fcn, epsilon, k, print_freq, switch_player_type=Inf)
+function improve_theta(model, policy_fcn, epsilon, k, print_freq, switch_player_type=Inf, train=true)
     wins = 0
     total_reward = 0
     initial_theta = deepcopy(model.theta)
@@ -148,15 +148,17 @@ function improve_theta(model, policy_fcn, epsilon, k, print_freq, switch_player_
 
         # Update theta
         if rp > -11
-            model = update!(model, s, a, r, sp, usable_a, false)
-            model = update!(model, sp, ap, rp, spp, usable_ap, true)
-            
+            if train
+                model = update!(model, s, a, r, sp, usable_a, false)
+                model = update!(model, sp, ap, rp, spp, usable_ap, true)
+            end
+
             # Record results
             wins = rp >= 0 ? wins + 1 : wins 
             total_reward += rp
         end
 
-        if i % print_freq == 0
+        if i % print_freq == 0 || i == print_freq/10 || i == print_freq/2
             avg_reward = total_reward / print_freq
             delta_theta = ones(6,1)
             for i in 1:6
@@ -172,9 +174,11 @@ function improve_theta(model, policy_fcn, epsilon, k, print_freq, switch_player_
             println("Change in theta: $delta_theta")
             println("Total change in theta: $tot_change")
             println("##################################################")
-
-            wins = 0
-            total_reward = 0
+            
+            if i % print_freq == 0
+                wins = 0
+                total_reward = 0
+            end
         end
     end
 end
@@ -188,14 +192,14 @@ function main()
         Dense(16, 1),
     )
     # OR
-    # @load "test.bson" basis
+    @load "alpha_1e-2_gamma_99e-2_epoch_10.bson" basis
 
     # Gradient Q-Learning
     A = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 3], [1, 4], [2, 3], [2, 5], [2, 6], [3, 5], [3, 7], [3, 8], [4, 7], [4, 9], [4, 10], [5, 1], [5, 9], [5, 11], [6, 4], [6, 12], [6, 13], [7, 12], [7, 14], [7, 15], [8, 14], [8, 16], [8, 17], [9, 6], [9, 16], [9, 18], [10, 19], [10, 20], [10, 21], [11, 13], [11, 19], [11, 22], [12, 2], [12, 20], [12, 23], [13, 23], [13, 24], [13, 25], [14, 11], [14, 26], [14, 27], [15, 24], [15, 26], [15, 28], [16, 10], [16, 29], [16, 30], [17, 29], [17, 31], [17, 32], [18, 27], [18, 31], [18, 33], [19, 8], [19, 34], [19, 35], [20, 34], [20, 36], [20, 37], [21, 30], [21, 36], [21, 38], [22, 18], [22, 39], [22, 40], [23, 35], [23, 39], [23, 41], [24, 15], [24, 42], [24, 43], [25, 42], [25, 44], [26, 44], [26, 45], [27, 17], [27, 45], [27, 46], [28, 22], [28, 47], [28, 48], [29, 43], [29, 47], [30, 49], [30, 50], [31, 48], [31, 49], [32, 21], [32, 50], [32, 51], [33, 51], [33, 52], [34, 25], [34, 52], [34, 53], [35, 53], [35, 54], [36, 28], [36, 55], [36, 56], [37, 54], [37, 55], [38, 33], [38, 57], [38, 58], [39, 56], [39, 57], [40, 32], [40, 59], [40, 60], [41, 59], [41, 61], [42, 58], [42, 61], [43, 38], [43, 62], [43, 63], [44, 60], [44, 62], [45, 37], [45, 64], [45, 65], [46, 64], [46, 66], [47, 63], [47, 66], [48, 41], [48, 67], [48, 68], [49, 65], [49, 67], [50, 40], [50, 69], [50, 70], [51, 69], [51, 71], [52, 68], [52, 71], [53, 46], [53, 70]]
     # A = 1:54
     gamma = 0.99
     theta = Flux.params(basis)
-    alpha = 0.001
+    alpha = 0.01
 
     Q_func_basis(theta, s, a) = Q_func(basis, theta, s, a)
     gradQ_func_basis(theta, s, a) = gradQ_func(basis, theta, s, a)
@@ -207,7 +211,8 @@ function main()
     print_frequency = 1000
     epsilon = 0.1
     switch_player_type = Inf        # Iteration at which we switch the opponents from random to heurisitc
-    improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency, switch_player_type)
+    train = true
+    improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency, switch_player_type, train)
 end
 
 main()

@@ -6,26 +6,42 @@ import random
 from gameView import *
 from player import *
 from heuristicAIPlayer import *
-import queue
-import numpy as np
+import signal
+
+"""
+    Timeout class
+"""
+
+class timeout:
+    def __init__(self, seconds=1, error_message='Timeout'):
+        self.seconds = seconds
+        self.error_message = error_message
+    def handle_timeout(self, signum, frame):
+        raise TimeoutError(self.error_message)
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
 
 """
     Catan Game Wrappers
 """
 
 class AIGame():
-    def __init__(self, specialPlayerName='1'):
+    def __init__(self, specialPlayerName='1', other_player_type="heuristic"):
         # Create game object
         self.special_player_name = specialPlayerName
         self.round = 1
         self.player_order = 1
         self.special_player_order = -1
         self.player_name_list = []
+        self.other_player_type = other_player_type
         
         self.reset()
     
     def start(self):
-        self.player_list = self.catan_game.create_player_list(special_placement_type="learning")
+        self.player_list = self.catan_game.create_player_list(special_placement_type="learning", other_player_type=self.other_player_type)
         random.shuffle(self.player_list)
         
         player_order = 1
@@ -214,23 +230,27 @@ class AIGame():
     Return relevant states, actions and rewards
 """
 
-def play_game_with_policy(placement_policy):
-    game      = AIGame(specialPlayerName="1")
+def play_game_with_policy(placement_policy, other_player_type="heuristic"):
+    try:
+        with timeout(10):
+            game      = AIGame(specialPlayerName="1", other_player_type=other_player_type)
 
-    s         = game.start()
-    # 1st placement
-    usable_a  = game.get_usable_action_space() # returns a list of size [# of possible action], each element of the list is a two-element list [a1, a2]
-    a         = placement_policy(s, usable_a) # assume a is list that looks like [a1, a2] 
-    sp, r     = game.play(a)
+            s         = game.start()
+            # 1st placement
+            usable_a  = game.get_usable_action_space() # returns a list of size [# of possible action], each element of the list is a two-element list [a1, a2]
+            a         = placement_policy(s, usable_a) # assume a is list that looks like [a1, a2] 
+            sp, r     = game.play(a)
 
-    # 2nd placement
-    usable_ap = game.get_usable_action_space()
-    ap        = placement_policy(sp, usable_ap)
-    spp, rp   = game.play(ap)
+            # 2nd placement
+            usable_ap = game.get_usable_action_space()
+            ap        = placement_policy(sp, usable_ap)
+            spp, rp   = game.play(ap)
 
-    # Note if rp=-11, something went wrong and you should just skip this round
+            # Note if rp=-11, something went wrong and you should just skip this round
 
-    return s, usable_a, a, r, sp, usable_ap, ap, rp, spp
+            return s, usable_a, a, r, sp, usable_ap, ap, rp, spp
+    except:
+        return [], [], [], [], [], [], [], -11, []
 
 def example():
     for iter in range(1000):
@@ -249,9 +269,10 @@ def example():
         print(sp)
         print(rp)
         print(spp)
-    
-game      = AIGame()
-s         = game.start()
-print(game.player_list[0].name)
-print(game.get_usable_action_space())
-print(len(game.get_usable_action_space()))
+   
+if __name__=="__main__": 
+    game      = AIGame()
+    s         = game.start()
+    print(game.player_list[0].name)
+    print(game.get_usable_action_space())
+    print(len(game.get_usable_action_space()))

@@ -395,7 +395,7 @@ class catanAIGame():
             self.action.append(diff[9])
         return self.action
 
-    def create_player_list(self, special_placement_type="random"):
+    def create_player_list(self, special_placement_type="random", other_player_type="heuristic"):
         #Initialize new players with names and colors
         playerColors = ['black', 'darkslateblue', 'magenta4', 'orange1']
         for i in range(self.numPlayers):
@@ -409,7 +409,7 @@ class catanAIGame():
                 if playerNameInput[i] == self.specialPlayerName:
                     newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i], init_placement_type=special_placement_type)
                 else:
-                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i])
+                    newPlayer = heuristicAIPlayer(playerNameInput[i], playerColors[i], init_placement_type=other_player_type)
                     
                 newPlayer.updateAI()
                 self.playerQueue.put(newPlayer)

@@ -2,6 +2,7 @@ using PyCall
 using Flux
 using BSON: @load
 using LinearAlgebra
+using ProgressBars
 
 """
     Catan Game Wrappers
@@ -12,7 +13,11 @@ pushfirst!(pyimport("sys")."path", "")
 play_game_with_policy = pyimport("AIGame_Wrapper")["play_game_with_policy"]
 
 function play_game(policy)
-    s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game_with_policy(policy)
+    return play_game(policy, "heuristic")    
+end
+
+function play_game(policy, other_player_type)
+    s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game_with_policy(policy, other_player_type)
 
     # Convert to Julia style vectors
     s = convert_array_2_julia(s, Int64)
@@ -101,7 +106,7 @@ function epsilonGreedyExploration(model, epsilon, s, usable_actions)
     s = convert_array_2_julia(s, Int64)
 
     if rand() < epsilon
-        return rand(usable_actions)
+        return usable_actions[rand(1:size(usable_actions)[1]), :]
     end
 
     Q(s,a) = lookahead(model, s, a)
@@ -123,17 +128,23 @@ end
     Main function
 """
 
-function improve_theta(model, policy_fcn, epsilon, k, print_freq)
+function improve_theta(model, policy_fcn, epsilon, k, print_freq, switch_player_type=Inf)
     wins = 0
     total_reward = 0
     initial_theta = deepcopy(model.theta)
 
-    for i in 1:k
+    for i in ProgressBar(1:k)
         # Policy
         current_policy(s, usable_actions) = policy_fcn(model, epsilon, s, usable_actions)
         
         # Play one game
-        s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game(current_policy)
+        if i < switch_player_type
+            other_player_type = "random"
+        else
+            other_player_type = "heuristic"
+        end
+
+        s, usable_a, a, r, sp, usable_ap, ap, rp, spp = play_game(current_policy, other_player_type)
 
         # Update theta
         if rp > -11
@@ -178,11 +189,9 @@ function main()
     )
     # OR
     # @load "test.bson" basis
-    # println(basis)
-    # exit()
 
     # Gradient Q-Learning
-    A = [[i, j] for j = 0:71 for i=0:53]
+    A = [[0, 0], [0, 1], [0, 2], [1, 0], [1, 3], [1, 4], [2, 3], [2, 5], [2, 6], [3, 5], [3, 7], [3, 8], [4, 7], [4, 9], [4, 10], [5, 1], [5, 9], [5, 11], [6, 4], [6, 12], [6, 13], [7, 12], [7, 14], [7, 15], [8, 14], [8, 16], [8, 17], [9, 6], [9, 16], [9, 18], [10, 19], [10, 20], [10, 21], [11, 13], [11, 19], [11, 22], [12, 2], [12, 20], [12, 23], [13, 23], [13, 24], [13, 25], [14, 11], [14, 26], [14, 27], [15, 24], [15, 26], [15, 28], [16, 10], [16, 29], [16, 30], [17, 29], [17, 31], [17, 32], [18, 27], [18, 31], [18, 33], [19, 8], [19, 34], [19, 35], [20, 34], [20, 36], [20, 37], [21, 30], [21, 36], [21, 38], [22, 18], [22, 39], [22, 40], [23, 35], [23, 39], [23, 41], [24, 15], [24, 42], [24, 43], [25, 42], [25, 44], [26, 44], [26, 45], [27, 17], [27, 45], [27, 46], [28, 22], [28, 47], [28, 48], [29, 43], [29, 47], [30, 49], [30, 50], [31, 48], [31, 49], [32, 21], [32, 50], [32, 51], [33, 51], [33, 52], [34, 25], [34, 52], [34, 53], [35, 53], [35, 54], [36, 28], [36, 55], [36, 56], [37, 54], [37, 55], [38, 33], [38, 57], [38, 58], [39, 56], [39, 57], [40, 32], [40, 59], [40, 60], [41, 59], [41, 61], [42, 58], [42, 61], [43, 38], [43, 62], [43, 63], [44, 60], [44, 62], [45, 37], [45, 64], [45, 65], [46, 64], [46, 66], [47, 63], [47, 66], [48, 41], [48, 67], [48, 68], [49, 65], [49, 67], [50, 40], [50, 69], [50, 70], [51, 69], [51, 71], [52, 68], [52, 71], [53, 46], [53, 70]]
     # A = 1:54
     gamma = 0.99
     theta = Flux.params(basis)
@@ -194,10 +203,11 @@ function main()
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
     # Play games
-    k = 1
-    print_frequency = 1
-    epsilon = 0.0
-    improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency)
+    k = 10000
+    print_frequency = 1000
+    epsilon = 0.1
+    switch_player_type = Inf        # Iteration at which we switch the opponents from random to heurisitc
+    improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency, switch_player_type)
 end
 
 main()

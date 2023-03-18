@@ -130,7 +130,7 @@ class AIGame():
         
         # assemble action space
         full_usable_action_space = []
-        for i in range(1, len(possibleVertices_index)):
+        for i in range(0, len(possibleVertices_index)):
             for road in possibleRoads[i]:
                 curr_action = []
                 curr_action.append(possibleVertices_index[i])
@@ -250,3 +250,8 @@ def example():
         print(rp)
         print(spp)
     
+game      = AIGame()
+s         = game.start()
+print(game.player_list[0].name)
+print(game.get_usable_action_space())
+print(len(game.get_usable_action_space()))

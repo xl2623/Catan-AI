@@ -242,11 +242,11 @@ function main()
     qlearning = GradientQLearning(A, gamma, Q_func_basis, gradQ_func_basis, theta, alpha)
 
     # Play games
-    k = 100000
+    k = 50000
     print_frequency = 1000
     epsilon = 1.0
     decay_rate = 0.9
-    decay_freq = 1000
+    decay_freq = 500
     switch_player_type = Inf        # Iteration at which we switch the opponents from random to heurisitc
     train = true
     constant_board = true

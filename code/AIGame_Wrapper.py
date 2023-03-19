@@ -7,6 +7,7 @@ from gameView import *
 from player import *
 from heuristicAIPlayer import *
 import signal
+import copy
 
 """
     Timeout class
@@ -230,11 +231,17 @@ class AIGame():
     Return relevant states, actions and rewards
 """
 
-def play_game_with_policy(placement_policy, other_player_type="heuristic"):
+def play_game_with_policy(placement_policy, other_player_type="heuristic", constant_board=False, board=None):
     try:
         with timeout(10):
+            # print(board)
             game      = AIGame(specialPlayerName="1", other_player_type=other_player_type)
 
+            if constant_board and board is not None:
+                game.catan_game.board = copy.deepcopy(board)
+            elif constant_board and board is None:
+                board = copy.deepcopy(game.catan_game.board)
+            
             s         = game.start()
             # 1st placement
             usable_a  = game.get_usable_action_space() # returns a list of size [# of possible action], each element of the list is a two-element list [a1, a2]
@@ -247,10 +254,15 @@ def play_game_with_policy(placement_policy, other_player_type="heuristic"):
             spp, rp   = game.play(ap)
 
             # Note if rp=-11, something went wrong and you should just skip this round
-
-            return s, usable_a, a, r, sp, usable_ap, ap, rp, spp
+            if constant_board:
+                return s, usable_a, a, r, sp, usable_ap, ap, rp, spp, board
+            else:
+                return s, usable_a, a, r, sp, usable_ap, ap, rp, spp
     except:
-        return [], [], [], [], [], [], [], -11, []
+        if constant_board:
+            return [], [], [], [], [], [], [], -11, [], board
+        else:
+            return [], [], [], [], [], [], [], -11, []
 
 def example():
     for iter in range(1000):

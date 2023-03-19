@@ -244,15 +244,15 @@ function main()
     # Play games
     k = 50000
     print_frequency = 1000
-    epsilon = 1.0
+    epsilon = 0.0
     decay_rate = 0.9
     decay_freq = 500
     switch_player_type = Inf        # Iteration at which we switch the opponents from random to heurisitc
     train = true
-    constant_board = true
+    constant_board = false
     results = improve_theta(qlearning, epsilonGreedyExploration, epsilon, k, print_frequency, switch_player_type, train, constant_board, decay_rate, decay_freq)
 
-    filename = "./data/results_alpha_1e-2_epsilon_1_decay_9e-1_freq_1000"
+    filename = "./data/results_alpha_1e-2_epsilon_0_change_board"
     CSV.write(filename*".csv", results)
     @save filename*".bson" basis
 end
